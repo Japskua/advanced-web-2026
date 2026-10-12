@@ -1,0 +1,137 @@
+body {
+  font-family: system-ui, Arial, sans-serif;
+  margin: 0;
+  background: #f6f6f6;
+  color: #111;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+h1 {
+  margin: 0;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+.sub {
+  margin: 6px 0 0;
+  opacity: 0.7;
+}
+
+.btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #eee;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
+}
+
+.error {
+  border-color: #ffb4b4;
+  background: #fff2f2;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tag {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  font-weight: 700;
+}
+
+.metaText {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.joke {
+  white-space: pre-wrap;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.muted {
+  opacity: 0.7;
+  font-size: 14px;
+}
+
+.errorBox {
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ffb4b4;
+  background: #fff2f2;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.rowSaved {
+  border-top: 1px solid #eee;
+  padding: 10px 0;
+}
+
+.rowTop {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.small {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.savedText {
+  overflow-wrap: anywhere;
+}

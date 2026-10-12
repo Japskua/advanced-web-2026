@@ -1,0 +1,6 @@
+# Let the dev server (`bun run dev`) inline environment variables that start
+# with BUN_PUBLIC_ into the browser code. Only those: everything else in the
+# environment (secrets!) stays out of the bundle. `bun run build` does the same
+# with --env='BUN_PUBLIC_*'.
+[serve.static]
+env = "BUN_PUBLIC_*"

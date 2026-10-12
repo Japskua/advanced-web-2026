@@ -1,0 +1,9 @@
+# Bun configuration for the whole repository.
+
+[install]
+# Supply-chain hygiene (see week 11, OWASP A03): only resolve package versions
+# that have been public for at least three days. Most malicious releases of
+# popular packages are detected and removed within hours, so a short delay
+# keeps them out of `bun add` / `bun update`. Exact versions already in
+# bun.lock are not affected.
+minimumReleaseAge = 259200 # seconds

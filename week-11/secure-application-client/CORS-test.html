@@ -1,0 +1,63 @@
+<!--
+  A page on ANOTHER origin, playing the role of a malicious website that a
+  logged-in user happens to visit. It tries to read data from both APIs with
+  the visitor's browser.
+
+    bun run cors-test        → http://localhost:5500
+
+  Port 5500 is a different origin from the client (5173), so the browser
+  applies the APIs' CORS policies:
+  - the vulnerable API answers "Access-Control-Allow-Origin: *": the page can
+    read its debug configuration;
+  - the secure API allows only http://localhost:5173: the browser refuses to
+    hand the response to this page.
+
+  Note that CORS is enforced by the browser. It protects users' browsers from
+  other websites; it does nothing against curl or server-side scripts.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CORS test (another origin)</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 16px; }
+      pre { background: #111; color: #9ef09e; padding: 12px; border-radius: 8px; overflow: auto; }
+      .ok { color: #b71c1c; } .blocked { color: #1b5e20; }
+    </style>
+  </head>
+  <body>
+    <h1>CORS test</h1>
+    <p>This page runs on <code id="origin"></code> and tries to read data from both APIs.</p>
+
+    <h2>Vulnerable API: <code>GET http://localhost:8000/api/debug/config</code></h2>
+    <pre id="vulnerable">…</pre>
+
+    <h2>Secure API: <code>POST http://localhost:8001/api/login</code></h2>
+    <pre id="secure">…</pre>
+
+    <script type="module">
+      document.getElementById("origin").textContent = location.origin;
+
+      async function attempt(id, url, init) {
+        const el = document.getElementById(id);
+        try {
+          const res = await fetch(url, init);
+          el.className = "ok";
+          el.textContent = `READ SUCCEEDED (HTTP ${res.status}):\n` + JSON.stringify(await res.json(), null, 2);
+        } catch (error) {
+          el.className = "blocked";
+          el.textContent = `Blocked by the browser: ${error.message}\n(The browser console shows the CORS error.)`;
+        }
+      }
+
+      attempt("vulnerable", "http://localhost:8000/api/debug/config");
+      attempt("secure", "http://localhost:8001/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "alice@example.com", password: "alice123" }),
+      });
+    </script>
+  </body>
+</html>

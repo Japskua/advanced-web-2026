@@ -1,0 +1,20 @@
+{
+  "name": "week-11-secure-application-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:vulnerable": "bun --watch src/main.ts --mode=vulnerable",
+    "dev:secure": "bun --watch src/main.ts --mode=secure",
+    "db:setup": "bun scripts/db-setup.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "jose": "^6.2.12"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "~6.0.3"
+  }
+}
