@@ -1,0 +1,33 @@
+{
+  // TypeScript settings for browser code. Bun bundles the app and strips the
+  // types; this file is for your editor and for `bun run typecheck`.
+  "compilerOptions": {
+    // The browser environment: DOM types instead of Bun/Node.js types.
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": [],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+
+    // JSX is compiled with React 17+'s automatic runtime, so components do not
+    // need `import React from "react"`.
+    "jsx": "react-jsx",
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+
+    // "@shared/types" points to ../shared/types.ts, the API contract shared
+    // with the back-end.
+    "paths": {
+      "@shared/*": ["../shared/*"]
+    }
+  },
+  "include": ["src"]
+}

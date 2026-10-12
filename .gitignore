@@ -111,3 +111,12 @@ dist
 
 # TernJS port file
 .tern-port
+
+# --- Course-specific ----------------------------------------------------------
+# Images uploaded through the week 5 and 6 galleries
+week-*/*/uploads/
+# The JSON "database" written by week 5
+week-*/*/data/
+# OS and editor files
+.DS_Store
+.idea/

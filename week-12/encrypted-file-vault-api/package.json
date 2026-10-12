@@ -1,0 +1,22 @@
+{
+  "name": "week-12-encrypted-file-vault-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/main.ts",
+    "start": "bun src/main.ts",
+    "build": "bun build src/main.ts --target=bun --outdir=dist --minify --sourcemap=linked",
+    "db:setup": "bun scripts/db-setup.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@azure/storage-blob": "^12.34.0",
+    "jose": "^6.2.12"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "~6.0.3"
+  }
+}

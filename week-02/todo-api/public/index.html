@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Todo App Part 2</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Tasks</h1>
+
+      <form id="createForm" class="row">
+        <input id="titleInput" placeholder="Task title..." aria-label="Task title" />
+        <input id="descriptionInput" placeholder="Task description..." aria-label="Task description" />
+        <button type="submit">Add</button>
+      </form>
+
+      <p id="error" class="error" hidden></p>
+      <p id="empty" class="empty" hidden>No tasks yet. Add one above.</p>
+      <ul id="list" class="list"></ul>
+    </main>
+
+    <!-- `defer` runs the script after the HTML has been parsed, so the
+         elements above already exist when app.js looks them up. -->
+    <script src="/app.js" defer></script>
+  </body>
+</html>

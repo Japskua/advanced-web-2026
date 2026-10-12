@@ -1,0 +1,183 @@
+body {
+  margin: 0;
+  font-family: system-ui, Arial, sans-serif;
+  background: #f4f4f6;
+  color: #111;
+}
+
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px;
+  border-top: 6px solid transparent;
+}
+
+.page.vulnerable {
+  border-top-color: #c62828;
+}
+
+.page.secure {
+  border-top-color: #2e7d32;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+h1 {
+  margin: 0;
+}
+
+h2 {
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+.targets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.target {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+}
+
+.target.active {
+  border-color: #333;
+  font-weight: 600;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.section,
+.output {
+  background: white;
+  border: 1px solid #e3e3e8;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.output {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.owasp {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #222;
+  color: white;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.row input {
+  flex: 1;
+  min-width: 180px;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-family: ui-monospace, monospace;
+}
+
+button {
+  padding: 8px 12px;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  background: #fafafa;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.hint {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.token {
+  margin-top: 10px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+pre {
+  margin: 8px 0 0;
+  padding: 10px;
+  background: #111;
+  color: #9ef09e;
+  border-radius: 8px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+.response {
+  margin-bottom: 12px;
+}
+
+.responseHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.status {
+  font-weight: 700;
+  padding: 0 8px;
+  border-radius: 6px;
+}
+
+.s2 {
+  background: #e3f6e5;
+  color: #1b5e20;
+}
+
+.s4 {
+  background: #fff3e0;
+  color: #b55400;
+}
+
+.s5,
+.s0 {
+  background: #fde7e9;
+  color: #b71c1c;
+}
