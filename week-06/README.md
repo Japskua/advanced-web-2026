@@ -38,7 +38,7 @@ The week 5 API plus one endpoint:
 PostgreSQL runs in Docker. From the **repository root**, once:
 
 ```bash
-docker compose up -d          # starts PostgreSQL (and Azurite, used in week 12)
+docker compose up -d          # starts PostgreSQL (and SeaweedFS, used in week 12)
 ```
 
 The container creates one database per week; this week uses `image_gallery`.

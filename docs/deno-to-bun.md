@@ -42,7 +42,7 @@ unchanged. The differences are in tooling, built-ins and permissions.
 | Cookies | parse the `Cookie` header by hand | `req.cookies.get()` / `.set()` / `.delete()` |
 | JWT | `npm:jose` | `jose` (same library) |
 | OpenID Connect | `jsr:@panva/openid-client` | `openid-client` (same library, from npm) |
-| Azure Blob Storage | `npm:@azure/storage-blob` | `@azure/storage-blob` (same library) |
+| Object storage | `npm:@azure/storage-blob` (Azure Blob Storage) | Bun's built-in `S3Client`, against any S3-compatible service |
 | Is this file the entry point? | `import.meta.main` | `import.meta.main` |
 | Directory of this file | `import.meta.dirname` | `import.meta.dir` (or `import.meta.dirname`) |
 

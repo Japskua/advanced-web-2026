@@ -1,5 +1,5 @@
 /**
- * Encrypted files: the bytes go to Blob Storage, the metadata to PostgreSQL.
+ * Encrypted files: the bytes go to object storage, the metadata to PostgreSQL.
  *
  * The server never sees a plaintext file or the key. It stores ciphertext plus
  * what the owner's browser needs to decrypt it later (the IV), and checks that
@@ -12,7 +12,7 @@ import { toFileDto } from "../mappers";
 import * as fileRepository from "../repositories/file-repository";
 import type { AuthUser } from "../types";
 import type { UploadInput } from "../util/validation";
-import { deleteBlob, downloadBlob, uploadBlob } from "./blob-storage";
+import { deleteObject, getObject, putObject } from "./object-storage";
 
 /**
  * The fingerprint check.
@@ -49,16 +49,16 @@ export async function uploadFile(user: AuthUser, input: UploadInput): Promise<Fi
   }
 
   const id = crypto.randomUUID();
-  const blobName = `${user.id}/${id}`;
+  const objectKey = `${user.id}/${id}`;
 
-  await uploadBlob(blobName, new Uint8Array(await input.encrypted.arrayBuffer()));
+  await putObject(objectKey, new Uint8Array(await input.encrypted.arrayBuffer()));
 
   try {
     const file = await fileRepository.insertFile({
       id,
       ownerId: user.id,
       originalFilename: input.originalFilename,
-      blobName,
+      objectKey,
       contentType: input.contentType,
       sizeBytes: input.sizeBytes,
       encryptionAlgorithm: "AES-GCM",
@@ -66,7 +66,7 @@ export async function uploadFile(user: AuthUser, input: UploadInput): Promise<Fi
     });
     return toFileDto(file);
   } catch (error) {
-    await deleteBlob(blobName); // no orphaned blobs (the week 6 lesson)
+    await deleteObject(objectKey); // no orphaned objects (the week 6 lesson)
     throw error;
   }
 }
@@ -75,12 +75,12 @@ export async function uploadFile(user: AuthUser, input: UploadInput): Promise<Fi
 export async function downloadFile(user: AuthUser, fileId: string): Promise<Uint8Array> {
   const file = await fileRepository.findFileForOwner(fileId, user.id);
   if (!file) throw new NotFoundError("File not found");
-  return await downloadBlob(file.blobName);
+  return await getObject(file.objectKey);
 }
 
-// Row first, then the blob (the week 6 order: the database is the source of truth).
+// Row first, then the object (the week 6 order: the database is the source of truth).
 export async function deleteFile(user: AuthUser, fileId: string): Promise<void> {
   const file = await fileRepository.deleteFileForOwner(fileId, user.id);
   if (!file) throw new NotFoundError("File not found");
-  await deleteBlob(file.blobName);
+  await deleteObject(file.objectKey);
 }

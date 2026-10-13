@@ -1,5 +1,6 @@
 // Configuration from environment variables: a .env file locally (loaded by
-// Bun), Container App settings in Azure. The same code runs in both places.
+// Bun), the server's .env file read by Docker Compose in production. The same
+// code runs in both places.
 
 function required(name: string): string {
   const value = Bun.env[name];
@@ -9,7 +10,6 @@ function required(name: string): string {
   return value;
 }
 
-// Azure Container Apps tells the app which port to listen on; 8000 locally.
 export const PORT = Number(Bun.env.PORT ?? 8000);
 
 export const DATABASE_URL = required("DATABASE_URL");
@@ -23,15 +23,20 @@ if (JWT_SECRET.startsWith("replace-me")) {
 
 export const INVITE_CODE = required("INVITE_CODE");
 
-// Required, with no "*" default: in production this must be the Static Web
-// App's exact URL.
+// Required, with no "*" default: in production this is the site's own URL.
 export const ALLOWED_ORIGIN = required("ALLOWED_ORIGIN");
 
 // Set to "true" when the API runs behind a reverse proxy that adds the client's
-// address to the X-Forwarded-For header (Azure Container Apps' ingress does).
+// address to the X-Forwarded-For header (Caddy, in our deployment).
 // Leave it off otherwise: then anyone could send that header and pretend to
 // be any IP address, for example to dodge the login rate limit.
 export const TRUST_PROXY = Bun.env.TRUST_PROXY === "true";
 
-export const AZURE_STORAGE_CONNECTION_STRING = required("AZURE_STORAGE_CONNECTION_STRING");
-export const AZURE_STORAGE_CONTAINER_NAME = Bun.env.AZURE_STORAGE_CONTAINER_NAME ?? "encrypted-files";
+// S3-compatible object storage (see services/object-storage.ts). The names are
+// the ones Bun's S3 client also reads by itself.
+export const S3_ENDPOINT = required("S3_ENDPOINT");
+export const S3_BUCKET = required("S3_BUCKET");
+export const S3_ACCESS_KEY_ID = required("S3_ACCESS_KEY_ID");
+export const S3_SECRET_ACCESS_KEY = required("S3_SECRET_ACCESS_KEY");
+export const S3_REGION = Bun.env.S3_REGION ?? "us-east-1";
+export const S3_VIRTUAL_HOSTED_STYLE = Bun.env.S3_VIRTUAL_HOSTED_STYLE === "true";

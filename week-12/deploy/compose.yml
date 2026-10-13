@@ -1,0 +1,116 @@
+# Production stack for the Encrypted File Vault, on one server.
+#
+#   Internet ──443──▶ caddy ──/api/*──▶ api ──▶ postgres
+#                       │                 └───▶ object-storage (or a provider's S3)
+#                       └── everything else: the React app's static files
+#
+# prepare.ts copies this file into deploy/out/ together with two image folders,
+# api/ (the bundled API) and web/ (Caddy + the built client), and a .env with
+# fresh secrets. On the server:
+#
+#   docker compose up -d --build      start (or update) everything
+#   docker compose ps                 status, including health
+#   docker compose logs -f api        follow the API's log
+#
+# Only Caddy publishes ports. The API, PostgreSQL and the object storage are
+# reachable only inside the Compose network.
+
+# The project name: containers are called vault-api-1, vault-postgres-1, …
+# whatever the folder is called.
+name: vault
+
+x-logging: &logging
+  # Keep at most 3 × 10 MB of logs per container, so logs cannot fill the disk.
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  caddy:
+    build: ./web # caddy:2-alpine + the Caddyfile + the client (web/Dockerfile)
+    image: vault-web
+    restart: unless-stopped
+    ports:
+      - "80:80" # HTTP: Let's Encrypt validation and the redirect to HTTPS
+      - "443:443" # HTTPS
+      - "443:443/udp" # HTTP/3
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL}
+    volumes:
+      - caddy-data:/data # the TLS certificates; keep this volume
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    logging: *logging
+
+  api:
+    build: ./api # the bundled API (api/Dockerfile)
+    image: vault-api
+    restart: unless-stopped
+    environment:
+      PORT: "8000"
+      DATABASE_URL: postgres://vault:${POSTGRES_PASSWORD}@postgres:5432/vault
+      JWT_SECRET: ${JWT_SECRET}
+      INVITE_CODE: ${INVITE_CODE}
+      ALLOWED_ORIGIN: ${PUBLIC_URL}
+      TRUST_PROXY: "true" # every request comes through Caddy
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      S3_REGION: ${S3_REGION}
+      S3_VIRTUAL_HOSTED_STYLE: ${S3_VIRTUAL_HOSTED_STYLE}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      object-storage:
+        condition: service_healthy
+        required: false # not running when a provider's object storage is used
+    logging: *logging
+
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vault
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: vault
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      # Runs once, when the database volume is created: the tables.
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vault -d vault"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+
+  # S3-compatible object storage on this same server (SeaweedFS). Started only
+  # with COMPOSE_PROFILES=self-hosted-storage in .env. To use Hetzner Object
+  # Storage or DigitalOcean Spaces instead, remove that line and point the S3_*
+  # variables at the provider.
+  object-storage:
+    image: chrislusf/seaweedfs:4.48
+    profiles: ["self-hosted-storage"]
+    restart: unless-stopped
+    command: mini -dir=/data -bucket=${S3_BUCKET}
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+    volumes:
+      - object-storage-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8333"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+
+volumes:
+  caddy-data:
+  caddy-config:
+  postgres-data:
+  object-storage-data:

@@ -119,9 +119,10 @@ request → withLogging → withAuth/withAdmin → handler → service → repos
 - **Week 10** adds an `oidc/` module (provider discovery), a `login-service`
   for the OAuth flow and a `session-service`; cookies via `req.cookies`.
 - **Week 11** keeps `vulnerable/` and `secure/` side by side to compare them.
-- **Week 12** is week 8's structure plus `services/blob-storage.ts` (object
-  storage), `util/rate-limiter.ts` (from week 11), a health route, graceful
-  shutdown, and a Dockerfile.
+- **Week 12** is week 8's structure plus `services/object-storage.ts` (S3
+  object storage through Bun's `S3Client`), `util/rate-limiter.ts` (from week
+  11), a health route, graceful shutdown, a Dockerfile, and a `deploy/` folder
+  with the production stack (Docker Compose + Caddy).
 
 ## The front-end side
 

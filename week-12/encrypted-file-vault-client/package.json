@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --port=5173 ./index.html",
-    "build": "bun build ./index.html --outdir=dist --production --public-path=/ --env='BUN_PUBLIC_*' && cp staticwebapp.config.json dist/",
+    "build": "bun build ./index.html --outdir=dist --production --public-path=/ --env='BUN_PUBLIC_*'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

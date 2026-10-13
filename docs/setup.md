@@ -7,9 +7,9 @@ Everything you need to run any week of the course on your own machine.
 | Tool | Needed for | Install |
 | ---- | ---------- | ------- |
 | **Bun** 1.3+ | every week | macOS/Linux/WSL: `curl -fsSL https://bun.sh/install \| bash`<br>Windows: `powershell -c "irm bun.sh/install.ps1 \| iex"`<br>Homebrew: `brew install oven-sh/bun/bun` |
-| **Docker Desktop** | weeks 6–12 (PostgreSQL, Azurite) | <https://www.docker.com/products/docker-desktop/> |
+| **Docker Desktop** | weeks 6–12 (PostgreSQL, SeaweedFS object storage) | <https://www.docker.com/products/docker-desktop/> |
 | **Git** | cloning, submitting | <https://git-scm.com/downloads> |
-| **Azure CLI** | week 12 deployment only | <https://learn.microsoft.com/cli/azure/install-azure-cli> |
+| **An SSH client** | week 12 deployment only (built into macOS, Linux and Windows 10+) | – |
 
 Check:
 
@@ -71,7 +71,8 @@ bun run setup:db         # every project's `bun run db:setup`
   On first start it creates one database per week: `image_gallery`,
   `secret_notes`, `notice_board`, `secure_app_vulnerable`, `secure_app_secure`,
   `file_vault`.
-- **Azurite**, the Azure Storage emulator, on `localhost:10000` (week 12).
+- **SeaweedFS**, S3-compatible object storage, on `localhost:8333` with the
+  bucket `encrypted-files` (week 12).
 
 Other useful commands:
 
@@ -157,4 +158,5 @@ Bun strips types without checking them. The errors are real; fix them.
 
 **Docker on Apple Silicon: a `linux/amd64` image crashes.** Bun cannot run
 under Docker's x86 emulation. Build without `--platform` to test locally; build
-with `--platform linux/amd64` only for pushing to Azure (week 12).
+for another architecture only to push the image somewhere else. Week 12
+sidesteps this: the image is built on the server itself.

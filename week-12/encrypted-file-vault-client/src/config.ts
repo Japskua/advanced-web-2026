@@ -5,10 +5,11 @@
  * when a page is requested. Instead, the bundler writes the value into the
  * JavaScript while building:
  *
- *   BUN_PUBLIC_API_URL=https://vault-api.example.azurecontainerapps.io bun run build
+ *   BUN_PUBLIC_API_URL=https://vault.203-0-113-10.sslip.io bun run build
  *
- * turns `process.env.BUN_PUBLIC_API_URL` below into that string literal. In
- * development the value comes from .env (see bunfig.toml).
+ * turns `process.env.BUN_PUBLIC_API_URL` below into that string literal
+ * (week-12/deploy/prepare.ts does this for you). In development the value
+ * comes from .env (see bunfig.toml).
  *
  * If the variable was not set, the expression is left as it is, and `process`
  * does not exist in browsers. The try/catch turns that into the local default

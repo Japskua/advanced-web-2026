@@ -120,3 +120,6 @@ week-*/*/data/
 # OS and editor files
 .DS_Store
 .idea/
+
+# Week 12 deployment folder: built artifacts and production secrets
+week-12/deploy/out/

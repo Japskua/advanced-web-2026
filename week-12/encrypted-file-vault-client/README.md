@@ -1,6 +1,6 @@
 # Encrypted File Vault client (week 12)
 
-Generates an AES-GCM key in the browser, encrypts before uploading and decrypts after downloading (Web Crypto). Built for Azure Static Web Apps.
+Generates an AES-GCM key in the browser, encrypts before uploading and decrypts after downloading (Web Crypto). The build is plain static files; in production Caddy serves them.
 
 **Lecture notes:** [week-12/README.md](../README.md) explains every concept in this project step by step.
 
@@ -36,6 +36,6 @@ Bun loads `.env` automatically. `.env.example` contains working values for local
 
 ## Notes
 
-- `BUN_PUBLIC_API_URL` is written into the bundle at build time: `BUN_PUBLIC_API_URL=https://… bun run build`.
-- `staticwebapp.config.json` is copied into `dist/` by the build (SPA fallback on Azure).
+- `BUN_PUBLIC_API_URL` is written into the bundle at build time: `BUN_PUBLIC_API_URL=https://… bun run build`. [`week-12/deploy/prepare.ts`](../deploy/prepare.ts) does this for you.
+- Web Crypto only works in a secure context: `http://localhost` or HTTPS. That is why the deployment uses HTTPS from the start.
 - Types shared with the other half of the app live in [`week-12/shared/`](../shared) and are imported as `@shared/…` (a path alias in `tsconfig.json`). When copying this project elsewhere, copy `shared/` next to it.

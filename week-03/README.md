@@ -91,8 +91,8 @@ bun ./index.html
 ```
 
 `bun run build` does the same bundling once, minifies the result and writes
-plain static files to `dist/`. Those files can be hosted anywhere (week 12
-deploys them to Azure Static Web Apps).
+plain static files to `dist/`. Those files can be hosted anywhere: any web
+server can serve them (week 12 serves them with Caddy on a cloud server).
 
 Note that `bun run dev` does **not** type-check, just like `bun run` on the
 back-end. Your editor shows errors; `bun run typecheck` checks everything.

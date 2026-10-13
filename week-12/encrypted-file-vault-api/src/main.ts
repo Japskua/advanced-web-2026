@@ -5,9 +5,9 @@ import { errorHandler } from "./errors";
 import { withLogging } from "./middleware/logger";
 import { applyMiddleware } from "./middleware/middleware";
 import { fallback, routes } from "./routes";
-import { ensureContainer } from "./services/blob-storage";
+import { checkStorage } from "./services/object-storage";
 
-await ensureContainer();
+await checkStorage();
 
 const server = Bun.serve({
   port: PORT,
@@ -21,8 +21,8 @@ const server = Bun.serve({
 
 console.log(`Encrypted File Vault API running at ${server.url}`);
 
-// Containers are stopped with SIGTERM (a new revision, scaling in). Finish the
-// requests in flight and close the database pool before exiting.
+// Docker stops containers with SIGTERM (`docker compose down`, a redeploy).
+// Finish the requests in flight and close the database pool before exiting.
 process.on("SIGTERM", async () => {
   console.log("SIGTERM received, shutting down…");
   await server.stop();

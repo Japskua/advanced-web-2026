@@ -4,8 +4,8 @@ import { withAuth } from "./middleware/auth";
 import { fail, noContent, ok } from "./util/response";
 
 export const routes = {
-  // Health check: Azure Container Apps (and load balancers in general) call
-  // this to decide whether the container is alive and may receive traffic.
+  // Health check: Docker (see the Dockerfile's HEALTHCHECK) and load balancers
+  // call this to decide whether the container is alive and may receive traffic.
   "/api/health": { GET: () => ok({ status: "up" }) },
 
   "/api/auth/register": { POST: authHandlers.register },

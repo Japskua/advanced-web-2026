@@ -7,7 +7,7 @@ const fileColumns = sql`
   id,
   owner_id             as "ownerId",
   original_filename    as "originalFilename",
-  blob_name            as "blobName",
+  object_key           as "objectKey",
   content_type         as "contentType",
   size_bytes           as "sizeBytes",
   encryption_algorithm as "encryptionAlgorithm",
@@ -17,8 +17,8 @@ const fileColumns = sql`
 
 export async function insertFile(file: Omit<FileEntity, "createdAt">): Promise<FileEntity> {
   const rows = await sql<FileEntity[]>`
-    insert into files (id, owner_id, original_filename, blob_name, content_type, size_bytes, encryption_algorithm, encryption_iv)
-    values (${file.id}, ${file.ownerId}, ${file.originalFilename}, ${file.blobName}, ${file.contentType},
+    insert into files (id, owner_id, original_filename, object_key, content_type, size_bytes, encryption_algorithm, encryption_iv)
+    values (${file.id}, ${file.ownerId}, ${file.originalFilename}, ${file.objectKey}, ${file.contentType},
             ${file.sizeBytes}, ${file.encryptionAlgorithm}, ${file.encryptionIv})
     returning ${fileColumns}
   `;

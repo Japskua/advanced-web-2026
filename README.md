@@ -2,7 +2,7 @@
 
 Lecture material for the *Advanced Web Applications* course: twelve weeks of
 full-stack TypeScript, from a single JSON endpoint to an end-to-end encrypted
-file vault deployed on Azure. Every project runs on **[Bun](https://bun.sh)**:
+file vault deployed on a plain cloud server (Hetzner or DigitalOcean). Every project runs on **[Bun](https://bun.sh)**:
 the runtime, the package manager, the bundler for the React front-ends and the
 test runner. There is no Node.js, Deno or Vite in the toolchain.
 
@@ -26,7 +26,7 @@ explains what changed and why.
 | [9](week-09/README.md) | Advanced React | Book Explorer | Custom hooks, debouncing, race conditions, pagination, `memo`/`useCallback` |
 | [10](week-10/README.md) | OAuth 2.0 / OIDC | Profile Viewer | Google sign-in with PKCE, `HttpOnly` sessions, i18n (en/fi), a mock identity provider |
 | [11](week-11/README.md) | Secure applications | Security demo | OWASP Top 10:2025, vulnerable vs. secure side by side, rate limiting, supply-chain security |
-| [12](week-12/README.md) | Cloud deployment | Encrypted File Vault | Web Crypto (AES-GCM), Azure Blob Storage, Docker, Container Apps, Static Web Apps |
+| [12](week-12/README.md) | Cloud deployment | Encrypted File Vault | Web Crypto (AES-GCM), S3-compatible object storage, Docker Compose, Caddy (HTTPS), a Hetzner / DigitalOcean server |
 | [13](week-13/README.md) | Project | your own | A starter checklist built from weeks 1–12 |
 
 Each week's README is the lecture material: learning objectives, the concepts
@@ -45,7 +45,7 @@ troubleshooting: [docs/setup.md](docs/setup.md).
 git clone <this repository> && cd advanced-web-2026
 bun install              # installs every week's dependencies
 bun run setup:env        # creates each project's .env from .env.example (with random secrets)
-bun run services:up      # PostgreSQL + Azurite in Docker (weeks 6–12)
+bun run services:up      # PostgreSQL + SeaweedFS object storage in Docker (weeks 6–12)
 bun run setup:db         # creates the tables of every database week
 
 cd week-04/joke-dashboard-api && bun run dev          # then, in another terminal:
@@ -80,7 +80,7 @@ advanced-web-2026/
 ├── package.json             Bun workspaces + the commands above
 ├── bunfig.toml              install policy (minimum release age, see week 11)
 ├── eslint.config.js         one lint config for every project
-├── docker-compose.yml       PostgreSQL 18 + Azurite
+├── docker-compose.yml       PostgreSQL 18 + SeaweedFS (S3-compatible object storage)
 ├── docker/postgres-init.sql one database per week
 ├── scripts/setup-env.ts     bun run setup:env
 └── week-01 … week-13/       one folder per week: README.md, the projects, shared/ types

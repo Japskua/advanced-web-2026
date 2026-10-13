@@ -1,5 +1,6 @@
 // Applies sql/schema.sql to the database in DATABASE_URL: `bun run db:setup`.
-// For Azure: run it once with DATABASE_URL pointing at the Azure server.
+// In production the PostgreSQL container applies the same file on its first
+// start (see week-12/deploy/compose.yml), so this is for local development.
 import path from "node:path";
 import { sql } from "../src/db/client";
 

@@ -63,7 +63,8 @@ because Bun has no runtime permission sandbox (see §6).
 | Cookies | `req.cookies` (`Bun.CookieMap`) | Replaces the hand-written cookie parser in week 10. |
 | JWT | `jose` (npm) | Bun has no JWT built-in; `jose` is the standard. |
 | OIDC | `openid-client` v6 (npm) | Same library as upstream (`jsr:@panva/openid-client` is the same package). |
-| Blob storage | `@azure/storage-blob` (npm) + **Azurite** emulator locally | Verified working on Bun. Azurite lets week 12 run without an Azure account. |
+| Object storage | Bun's built-in **`S3Client`**; **SeaweedFS** in Docker locally | No SDK. The S3 API is the de-facto standard, so the same code runs against SeaweedFS, Hetzner Object Storage, DigitalOcean Spaces, Cloudflare R2 or AWS S3; only the endpoint and keys change. Upstream used Azure Blob Storage; dropped on purpose (see the next row). |
+| Deployment target | **One cloud server** (Hetzner Cloud or DigitalOcean) running Docker Compose: Caddy (automatic HTTPS, static client, reverse proxy) + API + PostgreSQL + optional SeaweedFS | Cheap (a few euros a month), little ceremony, and every skill transfers to any provider: SSH, Docker, a reverse proxy, environment variables. Upstream used Azure Container Apps, Static Web Apps and Flexible Server; a proprietary platform with much more overhead for the same result. |
 | Env vars | Bun auto-loads `.env`; every API validates its env in one `config.ts` from week 7 | No `--env-file` flag needed. Failing fast on a missing `JWT_SECRET` fixes an upstream bug. |
 | Repository layout | Bun **workspaces**, one folder per project: `week-XX/<project>/` | One `bun install` at the root installs every week. Each project still has its own complete `package.json`/`tsconfig.json`, so a student can copy one folder out and run `bun install`. Week folders are zero-padded so they sort correctly. |
 | API response envelope | `{ ok: true, data }` / `{ ok: false, error: { message } }` everywhere from week 2 (except week 11's demo API, which shows raw answers on purpose) | Upstream mixed four shapes and several clients read the wrong one (see §5). Week 1 keeps a simpler shape on purpose and week 2 explains why the union is better. |
@@ -73,7 +74,7 @@ because Bun has no runtime permission sandbox (see §6).
 | Type checking | `typescript` 6.0 (`tsc --noEmit`) in every project | Bun strips types but never checks them. TS 7 is out, but `typescript-eslint` does not support it yet. |
 | Linting | One ESLint 10 flat config at the repository root, with `react-hooks` rules | Keeps per-project folders small; the hooks rules reinforce the `useEffect` lectures. |
 | Tests | `bun test` in every back-end, plus pure-logic tests where useful | Verifies the port, and doubles as a reference for CodeGrade-style automatic grading. |
-| Ports | APIs on `8000`, clients on `5173` | Same as upstream, so the GCP and Azure instructions (redirect URIs, allowed origins) are unchanged. |
+| Ports | APIs on `8000`, clients on `5173` | Same as upstream, so the Google Cloud instructions (redirect URIs) are unchanged. |
 | Dependencies | Latest stable majors (React 19.3, React Router 8, MUI 9, i18next 26) | Verified to typecheck and bundle with Bun 1.4.2 before adoption. |
 | Install policy | Root `bunfig.toml`: `minimumReleaseAge = 259200` (3 days) | Supply-chain hygiene taught in week 11. It immediately blocked `@types/bun@1.4.3` (published that day), so version floors were set to releases older than three days (`@types/bun ^1.4.2`, `@mui/material ^9.4.0`, `i18next ^26.4.2`). |
 | Week 10 testing | A small mock OpenID provider (`dev/mock-oidc-provider.ts`) | The whole OIDC flow (state, nonce, PKCE, signed ID tokens) is tested automatically and can be developed without a Google Cloud project. |
@@ -197,25 +198,31 @@ added. "Bun feature" is what the week can show off about the toolchain.
 
 ### Week 12 – Cloud deployment (`week-12/encrypted-file-vault-*`)
 - Same: client-side AES-GCM encryption, key fingerprint onboarding, encrypted
-  blobs in Azure Blob Storage, metadata in PostgreSQL, Container Apps + Static
-  Web Apps + PostgreSQL Flexible Server.
-- Bun: `oven/bun` Docker image, `bun build` with `--env=BUN_PUBLIC_*` for the
-  API URL, `bunx @azure/static-web-apps-cli` for deployment.
-- Fixed: `staticwebapp.config.json` added (upstream deep links returned 404 on
-  Static Web Apps); malformed JSON returns 400; "fingerprint already set"
+  files in object storage, metadata in PostgreSQL, the API in a container.
+- Replaced: Azure (Blob Storage, Container Apps, Static Web Apps, PostgreSQL
+  Flexible Server) by a vendor-neutral setup: Bun's built-in `S3Client`
+  against any S3-compatible storage, and one Hetzner or DigitalOcean server
+  running `week-12/deploy/compose.yml` (Caddy + API + PostgreSQL + optional
+  SeaweedFS). `week-12/deploy/prepare.ts` builds everything and generates the
+  production secrets; the image is built on the server, for its own CPU.
+- Bun: `oven/bun` Docker image with a `HEALTHCHECK`, `bun build` bundling the
+  API into one file, `bun build` with `--env=BUN_PUBLIC_*` for the API URL.
+- Fixed: SPA fallback in production (upstream deep links returned 404; here
+  Caddy's `try_files`); malformed JSON returns 400; "fingerprint already set"
   returns 409 instead of 500; the dead `if (!SECRET)` check replaced by real
-  validation; `ALLOWED_ORIGIN` must be set explicitly in production; the blob
-  container is created once at startup; timestamps use `timestamptz`.
-- Added: Azurite in `docker-compose.yml` so the whole app runs locally; TLS
-  settings for Azure PostgreSQL documented (`?sslmode=require`, verified with
-  Bun's SQL client); rate-limited login (from week 11); `/api/health` and
-  graceful `SIGTERM` shutdown; the pasted key is checked against the account's
-  fingerprint immediately.
+  validation; `ALLOWED_ORIGIN` must be set explicitly in production; the
+  storage is checked once at startup; timestamps use `timestamptz`.
+- Added: SeaweedFS in `docker-compose.yml` so the whole app runs locally;
+  automatic HTTPS (Let's Encrypt via Caddy, `sslip.io` when there is no
+  domain); rate-limited login (from week 11) behind the proxy (`TRUST_PROXY`);
+  `/api/health` and graceful `SIGTERM` shutdown; the pasted key is checked
+  against the account's fingerprint immediately.
 - Changed: RESTful file URLs (`GET /api/files/:id/content`,
   `DELETE /api/files/:id`); `/api/auth/dashboard` became `/api/auth/me`; the
   fingerprint is required for uploads only (downloading ciphertext is harmless,
   deleting needs no key). The docs explain why this deployment uses a Bearer
-  token rather than week 10's cookie (client and API are on different sites).
+  token rather than week 10's cookie, and switching to a cookie is an
+  exercise (the production setup is same-origin, so it would work).
 
 ## 5. Upstream issues fixed (summary)
 
@@ -232,7 +239,7 @@ added. "Bun feature" is what the week can show off about the toolchain.
 | 10 | OIDC state and sessions never expired | Unbounded memory growth |
 | 11 | Secure mode vs plaintext seeds | Seeded users could not log in after the fix |
 | 11 | `Content-Type: application/json charset=utf-8` (missing `;`) | Invalid header |
-| 12 | No SPA fallback on Static Web Apps | Refreshing `/login` returned 404 |
+| 12 | No SPA fallback for the deployed client | Refreshing `/login` returned 404 |
 | 12 | "Fingerprint already set" mapped to 500 | Wrong status code |
 
 ## 6. Deno features with no direct Bun equivalent
@@ -263,7 +270,7 @@ advanced-web-2026/
 ├── package.json              workspaces + repo-wide scripts (setup:env, setup:db, typecheck, test, build, lint)
 ├── bunfig.toml               install policy (minimumReleaseAge)
 ├── eslint.config.js          one lint config for every project
-├── docker-compose.yml        PostgreSQL 18 + Azurite
+├── docker-compose.yml        PostgreSQL 18 + SeaweedFS
 ├── docker/postgres-init.sql  creates one database per week
 ├── scripts/setup-env.ts      creates .env files from .env.example with random secrets
 ├── week-XX/
@@ -281,7 +288,7 @@ Done for every project, and repeatable with the root scripts:
 | Check | Command | Result |
 | ----- | ------- | ------ |
 | Type checking (strict) | `bun run typecheck` | 20/20 projects pass |
-| API tests | `bun run test` | 132 tests pass (weeks 1, 2, 4–8, 10–12; database weeks against Docker PostgreSQL, week 12 also against Azurite) |
+| API tests | `bun run test` | 132 tests pass (weeks 1, 2, 4–8, 10–12; database weeks against Docker PostgreSQL, week 12 also against SeaweedFS) |
 | Client builds | `bun run build` | all 10 clients build; the week 12 API bundles |
 | Lint | `bun run lint` | clean, including the React hooks rules |
 | Dependencies | `bun audit`, `bun pm untrusted` | no known vulnerabilities, no blocked install scripts |
@@ -293,19 +300,21 @@ in week 7, admin and user roles (including a user deleted while logged in) in
 week 8, search/paging/favourites persistence in week 9, the full OIDC login,
 language switch and logout against the mock provider in week 10, both APIs and
 the cross-origin CORS page in week 11, and register → onboarding → encrypted
-upload → download/decrypt → reload → unlock in week 12. The week 12 Docker
-image was built and run against local PostgreSQL and Azurite.
+upload → download/decrypt → reload → unlock in week 12. The week 12
+production stack (`prepare.ts` → Caddy + API image + PostgreSQL + SeaweedFS
+with Docker Compose) was run locally and used through Caddy in a browser.
 
 Not verified, because they need external accounts:
 
 - the Google OIDC round trip (week 10). The same code path is verified against
   the mock provider; Google needs a GCP OAuth client (README, last section);
-- the actual Azure deployment (week 12). The image, the TLS setting for Azure
-  PostgreSQL, the bundling and the `bunx --bun @azure/static-web-apps-cli`
-  command were checked locally; the Azure Portal steps follow last year's
-  tested guide, adapted to Bun.
+- a deployment on a real Hetzner or DigitalOcean server (week 12). The whole
+  stack was run locally; a real server adds the provider's console steps and
+  Let's Encrypt issuing the certificate, which Caddy does by itself;
+- Hetzner Object Storage and DigitalOcean Spaces. The code talks plain S3 and
+  was verified against SeaweedFS; the providers' endpoints follow their docs.
 
 One environment note: on Apple Silicon the `linux/amd64` image crashes under
 Docker's CPU emulation (Bun needs instructions QEMU does not provide). It runs
-natively on arm64 and is expected to run on Azure's amd64 hosts; the week 12
-README tells students to test locally without `--platform`.
+natively on arm64 and on amd64. Week 12 avoids the problem entirely: the
+image is built on the server, for the server's own architecture.
