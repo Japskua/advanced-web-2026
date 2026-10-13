@@ -1,5 +1,6 @@
 -- Database schema for the Encrypted File Vault. Apply with `bun run db:setup`
--- (locally, or against Azure by pointing DATABASE_URL at the Azure server).
+-- locally. In production PostgreSQL applies it by itself on its first start
+-- (week-12/deploy/compose.yml mounts it into /docker-entrypoint-initdb.d).
 
 create table if not exists users (
     id              uuid        primary key,
@@ -15,8 +16,8 @@ create table if not exists files (
     id                   uuid        primary key,
     owner_id             uuid        not null references users (id) on delete cascade,
     original_filename    text        not null,
-    -- Where the encrypted bytes are in Blob Storage: "<owner id>/<file id>".
-    blob_name            text        not null unique,
+    -- Where the encrypted bytes are in object storage: "<owner id>/<file id>".
+    object_key           text        not null unique,
     content_type         text        not null,
     size_bytes           integer     not null check (size_bytes >= 0),
     encryption_algorithm text        not null check (encryption_algorithm = 'AES-GCM'),

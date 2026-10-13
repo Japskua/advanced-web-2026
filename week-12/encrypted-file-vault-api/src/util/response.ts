@@ -1,8 +1,9 @@
 import type { ApiResult } from "@shared/types";
 import { ALLOWED_ORIGIN } from "../config";
 
-// CORS for one origin: the client's. The API and the client live on different
-// domains in Azure (…azurecontainerapps.io and …azurestaticapps.net).
+// CORS for one origin: the client's. In development the client runs on another
+// port (5173) than the API (8000). In production Caddy serves both from the
+// same origin, so CORS is not even needed there, but it does no harm.
 export function corsHeaders(): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGIN,

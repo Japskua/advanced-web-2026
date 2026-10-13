@@ -26,18 +26,28 @@ services:
       timeout: 3s
       retries: 10
 
-  # Azurite emulates Azure Blob Storage for week 12, so the encrypted file vault
-  # runs locally without an Azure account. Connection string:
-  #   AZURE_STORAGE_CONNECTION_STRING=UseDevelopmentStorage=true
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite
-    container_name: awa-azurite
-    command: azurite-blob --blobHost 0.0.0.0 --loose --skipApiVersionCheck
+  # S3-compatible object storage for week 12: SeaweedFS in its single-process
+  # "mini" mode. Bun's built-in S3 client talks to it exactly as it would to
+  # Hetzner Object Storage, DigitalOcean Spaces or AWS S3. It creates the
+  # bucket on startup; the credentials below are for local development only.
+  #   S3_ENDPOINT=http://localhost:8333  S3_BUCKET=encrypted-files
+  object-storage:
+    image: chrislusf/seaweedfs:4.48
+    container_name: awa-object-storage
+    command: mini -dir=/data -bucket=encrypted-files
+    environment:
+      AWS_ACCESS_KEY_ID: awa-dev-access-key
+      AWS_SECRET_ACCESS_KEY: awa-dev-secret-key
     ports:
-      - "10000:10000"
+      - "8333:8333"
     volumes:
-      - azurite-data:/data
+      - object-storage-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8333"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
 volumes:
   postgres-data:
-  azurite-data:
+  object-storage-data:

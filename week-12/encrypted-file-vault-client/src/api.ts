@@ -3,8 +3,8 @@ import { API_URL } from "./config";
 
 // --- The token -------------------------------------------------------------
 // A Bearer token in localStorage (weeks 7–8). Why not week 10's HttpOnly
-// cookie? See the API's middleware/auth.ts: in Azure, the client and the API
-// are on different sites, where cookies are increasingly blocked.
+// cookie? See the API's middleware/auth.ts: a token works wherever the client
+// runs; switching this app to a cookie is one of the week's exercises.
 const TOKEN_KEY = "vault-token";
 
 export const tokenStore = {

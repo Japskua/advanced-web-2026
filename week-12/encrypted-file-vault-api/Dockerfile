@@ -1,17 +1,16 @@
 # The API as a container image.
 #
-#   bun run build                                          # 1. bundle src/ + dependencies into dist/main.js
-#   docker build -t vault-api .                            # 2a. an image for your own machine (to try it)
-#   docker build --platform linux/amd64 -t <registry>.azurecr.io/vault-api:1.0 .
-#                                                          # 2b. an image for Azure (amd64); push it, don't run it on an ARM Mac
+#   bun run build                    # 1. bundle src/ + dependencies into dist/main.js
+#   docker build -t vault-api .      # 2. build the image
 #
-# Running it locally needs different service URLs than .env: inside a container
-# "localhost" is the container itself. See "Running the container locally" in
-# the week 12 README.
+# You rarely run these two by hand: week-12/deploy/prepare.ts puts the bundle
+# and this Dockerfile into the deployment folder, and `docker compose up
+# --build` on the server builds the image there, for the server's own CPU
+# architecture (x86 or ARM).
 #
-# `bun build` bundles the application *and* every dependency (jose, the Azure
-# SDK) into one JavaScript file, so the image needs no node_modules, no
-# package.json and no install step: just Bun and that file.
+# `bun build` bundles the application *and* every dependency (here: jose)
+# into one JavaScript file, so the image needs no node_modules, no package.json
+# and no install step: just Bun and that file.
 
 FROM oven/bun:1.4-alpine
 
@@ -25,5 +24,10 @@ USER bun
 
 # Documentation only: the app listens on $PORT (default 8000).
 EXPOSE 8000
+
+# Docker asks this every 15 seconds; Compose starts Caddy only once the API is
+# healthy, and `docker compose ps` shows the state.
+HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
+  CMD ["bun", "-e", "fetch('http://localhost:8000/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
 
 CMD ["bun", "dist/main.js"]

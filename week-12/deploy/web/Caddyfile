@@ -1,0 +1,35 @@
+# Caddy: the web server in front of everything.
+#
+# - HTTPS: for a public host name, Caddy obtains and renews a Let's Encrypt
+#   certificate by itself and redirects HTTP to HTTPS. Nothing to configure.
+# - /api/*: forwarded to the API container ("reverse proxy").
+# - everything else: the React app's static files, with index.html for every
+#   client-side route (/login, /onboarding, …).
+#
+# PUBLIC_URL comes from the environment, e.g. https://vault.203-0-113-10.sslip.io
+
+{$PUBLIC_URL} {
+	encode zstd gzip
+
+	handle /api/* {
+		# Caddy adds the client's address to X-Forwarded-For (see TRUST_PROXY).
+		reverse_proxy api:8000
+	}
+
+	handle {
+		root * /srv/client
+		# A file if it exists, otherwise the app (the SPA fallback).
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		# Browsers must use HTTPS for this site from now on (one year).
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Do not advertise the server software.
+		-Server
+	}
+}

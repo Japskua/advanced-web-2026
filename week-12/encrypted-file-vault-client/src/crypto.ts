@@ -3,8 +3,8 @@
  *
  * Files are encrypted in the browser before they are uploaded, and decrypted
  * in the browser after they are downloaded. The server, the database and the
- * blob storage only ever see ciphertext. This is "end-to-end" encryption: even
- * someone with full access to the cloud account cannot read the files.
+ * object storage only ever see ciphertext. This is "end-to-end" encryption:
+ * even someone with full access to the server cannot read the files.
  *
  * AES-GCM with a 256-bit key:
  * - AES is the standard symmetric cipher; GCM is a mode that also

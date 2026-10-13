@@ -13,6 +13,10 @@ export const withLogging: Middleware = (next) => async (req, server) => {
   const start = performance.now();
   const { pathname } = new URL(req.url);
 
+  // Docker's health check calls /api/health every 15 seconds (see the
+  // Dockerfile); logging those would bury the real requests.
+  if (pathname === "/api/health") return next(req, server);
+
   console.log(`[${new Date().toISOString()}] → ${req.method} ${pathname}`);
 
   try {

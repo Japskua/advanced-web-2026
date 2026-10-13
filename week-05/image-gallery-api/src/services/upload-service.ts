@@ -2,7 +2,7 @@
  * Storing uploaded images.
  *
  * Common practice, also in this demo: the image *files* go to file storage
- * (here a folder on disk; in week 12 Azure Blob Storage), and only *metadata*
+ * (here a folder on disk; in week 12 S3-compatible object storage), and only *metadata*
  * about them (name, size, type, time) goes to the "database". This week the
  * database is a JSON file, data/uploads.json; week 6 replaces it with
  * PostgreSQL.

@@ -13,7 +13,7 @@ export interface FileEntity {
   id: string;
   ownerId: string;
   originalFilename: string;
-  blobName: string; // where the encrypted bytes are stored
+  objectKey: string; // where the encrypted bytes are in object storage
   contentType: string;
   sizeBytes: number;
   encryptionAlgorithm: "AES-GCM";

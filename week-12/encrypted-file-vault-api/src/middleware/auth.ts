@@ -1,12 +1,11 @@
 /**
  * withAuth(handler): only authenticated users reach the handler (week 8).
  *
- * Why a Bearer token and not week 10's session cookie? In Azure, the client
- * (…azurestaticapps.net) and the API (…azurecontainerapps.io) are on different
- * *sites*. A cookie would have to be SameSite=None to be sent at all, and
- * browsers increasingly block such third-party cookies. A token in the
- * Authorization header works across sites. (Serving both from one domain, e.g.
- * app.example.com and api.example.com, would make cookies an option again.)
+ * Why a Bearer token and not week 10's session cookie? A token works wherever
+ * the client runs: on another port in development, on another domain, in a
+ * mobile app. Our production setup serves the client and the API from the same
+ * origin (Caddy routes /api to the API), so an HttpOnly session cookie would
+ * work there too: that is one of this week's exercises.
  */
 import type { BunRequest } from "bun";
 import { UnauthorizedError } from "../errors";

@@ -1,4 +1,4 @@
-// Integration tests for the vault: PostgreSQL and Azurite from docker-compose.yml.
+// Integration tests for the vault: PostgreSQL and SeaweedFS (S3) from docker-compose.yml.
 // The test plays the browser's role: it generates a real AES-GCM key and
 // encrypts with Web Crypto, exactly like the client does.
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
@@ -8,7 +8,7 @@ import type { ApiResult, FileDto, LoginResponse, UserDto } from "@shared/types";
 import { sql } from "../src/db/client";
 import { errorHandler } from "../src/errors";
 import { fallback, routes } from "../src/routes";
-import { downloadBlob, ensureContainer } from "../src/services/blob-storage";
+import { checkStorage, getObject } from "../src/services/object-storage";
 
 let server: Server<undefined>;
 let baseUrl: string;
@@ -18,7 +18,7 @@ const password = "Str0ng!Password";
 
 beforeAll(async () => {
   await sql.file(path.join(import.meta.dir, "..", "sql", "schema.sql"));
-  await ensureContainer();
+  await checkStorage();
   server = Bun.serve({ port: 0, routes, fetch: fallback, error: errorHandler });
   baseUrl = server.url.origin;
 });
@@ -159,13 +159,13 @@ describe("the encrypted file lifecycle", () => {
     expect((await api("DELETE", `/api/files/${uploaded.id}`, { token: intruder })).status).toBe(404);
   });
 
-  test("the owner deletes it: the row and the blob are gone", async () => {
+  test("the owner deletes it: the row and the object are gone", async () => {
     expect((await api("DELETE", `/api/files/${uploaded.id}`, { token })).status).toBe(204);
     expect((await api("GET", `/api/files/${uploaded.id}/content`, { token })).status).toBe(404);
     expect(await sql`select id from files where id = ${uploaded.id}`).toHaveLength(0);
 
     const me = await data<UserDto>(await api("GET", "/api/auth/me", { token }));
-    await expect(downloadBlob(`${me.id}/${uploaded.id}`)).rejects.toThrow(); // the blob no longer exists
+    await expect(getObject(`${me.id}/${uploaded.id}`)).rejects.toThrow(); // the object no longer exists
   });
 
   test("without a token everything is 401", async () => {
