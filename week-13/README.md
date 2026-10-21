@@ -12,7 +12,7 @@ need, then rename things:
 
 | You need… | Start from |
 | --------- | ---------- |
-| A REST API with a database, auth and roles, plus a React/MUI client | `week-08` |
+| A REST API with a database, auth and roles, plus a React client (shadcn/ui + Tailwind CSS) | `week-08` |
 | Sign-in with Google instead of passwords | `week-10` |
 | File uploads to object storage, deployment to a cloud server (Hetzner, DigitalOcean) | `week-12` |
 | A front-end only, against a public API | `week-09` |

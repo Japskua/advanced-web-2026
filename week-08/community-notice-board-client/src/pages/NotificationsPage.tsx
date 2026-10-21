@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { Alert, Box, Card, CardContent, CircularProgress, Stack, Typography } from "@mui/material";
 import type { NotificationDto } from "@shared/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { fetchNotifications } from "../api";
 
 export default function NotificationsPage() {
@@ -27,40 +29,38 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center py-12">
+        <Spinner className="size-8 text-primary" />
+      </div>
     );
   }
 
   return (
-    <Stack spacing={2}>
-      <Typography variant="h4" component="h1">
-        Notifications
-      </Typography>
+    <div className="grid gap-4">
+      <h1 className="text-3xl font-semibold">Notifications</h1>
 
-      {error && <Alert severity="error">{error}</Alert>}
-
-      {!error && notifications.length === 0 && (
-        <Typography color="text.secondary">No notifications yet.</Typography>
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
+
+      {!error && notifications.length === 0 && <p className="text-muted-foreground">No notifications yet.</p>}
 
       {notifications.map((notification) => (
         <Card key={notification.id}>
-          <CardContent>
-            <Typography variant="h6" component="h2">
-              {notification.title}
-            </Typography>
-            {/* pre-line keeps the line breaks the admin typed. */}
-            <Typography variant="body1" sx={{ mt: 1, whiteSpace: "pre-line" }}>
-              {notification.content}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
-              {notification.author.email} · {new Date(notification.createdAt).toLocaleString()}
-            </Typography>
-          </CardContent>
+          <CardHeader>
+            <CardTitle>
+              <h2 className="text-lg">{notification.title}</h2>
+            </CardTitle>
+          </CardHeader>
+          {/* whitespace-pre-line keeps the line breaks the admin typed. */}
+          <CardContent className="whitespace-pre-line">{notification.content}</CardContent>
+          <CardFooter className="text-xs text-muted-foreground">
+            {notification.author.email} · {new Date(notification.createdAt).toLocaleString()}
+          </CardFooter>
         </Card>
       ))}
-    </Stack>
+    </div>
   );
 }

@@ -1,6 +1,11 @@
 import { useState, type SubmitEvent } from "react";
-import { Link as RouterLink } from "react-router";
-import { Alert, Box, Button, Paper, TextField, Typography } from "@mui/material";
+import { Link } from "react-router";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { createNotification } from "../api";
 
 export default function AdminNewNotificationPage() {
@@ -29,48 +34,45 @@ export default function AdminNewNotificationPage() {
   }
 
   return (
-    <Paper sx={{ p: 4 }}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        New notification
-      </Typography>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <h1 className="text-2xl">New notification</h1>
+        </CardTitle>
+      </CardHeader>
 
-      <Box component="form" onSubmit={handleSubmit} sx={{ display: "grid", gap: 2, mt: 2 }}>
-        <TextField
-          label="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          slotProps={{ htmlInput: { maxLength: 120 } }}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          multiline
-          minRows={4}
-          required
-          fullWidth
-        />
+      <CardContent>
+        <form onSubmit={handleSubmit} className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">Title</Label>
+            <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} required />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="content">Content</Label>
+            <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} className="min-h-32" required />
+          </div>
 
-        {error && <Alert severity="error">{error}</Alert>}
-        {success && (
-          <Alert
-            severity="success"
-            action={
-              <Button color="inherit" size="small" component={RouterLink} to="/notifications">
-                View
-              </Button>
-            }
-          >
-            {success}
-          </Alert>
-        )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {success && (
+            <Alert>
+              <AlertDescription className="flex w-full items-center justify-between gap-2">
+                {success}
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/notifications">View</Link>
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
-        <Button type="submit" variant="contained" disabled={saving}>
-          {saving ? "Publishing…" : "Publish"}
-        </Button>
-      </Box>
-    </Paper>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Publishing…" : "Publish"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

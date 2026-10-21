@@ -131,7 +131,7 @@ request → withLogging → withAuth/withAdmin → handler → service → repos
 | 3 | `App.tsx` with the state, `components/` for presentation |
 | 4–6 | `api.ts` (one `request<T>()` helper), `config.ts`, `components/` |
 | 7 | + `pages/`, `auth.ts`, React Router, route guard components |
-| 8 | + MUI `theme.ts`, `hooks/useAuth.ts` (an external store) |
+| 8 | + shadcn/ui `components/ui/`, Tailwind theme in `index.css`, `hooks/useAuth.ts` (an external store) |
 | 9 | + `hooks/` with custom hooks for data, debouncing, persistence |
 | 10 | + `i18n/`, a layout route that loads the session once |
 | 12 | + React contexts and providers (`auth/`, `encryption/`), `crypto.ts` |

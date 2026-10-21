@@ -39,7 +39,7 @@ Student-facing material lives in each `week-XX/README.md`.
 | 5 | Image Gallery API + client | ~790 | multipart upload, filesystem, JSON "database", logging middleware |
 | 6 | Image Gallery v2 API + client | ~1030 | PostgreSQL via `jsr:@db/postgres`, repository layer |
 | 7 | Secret Notes API + client | ~1060 | JWT (`jose`), bcrypt (`jsr:@felix/bcrypt`), React Router |
-| 8 | Community Notice Board API + client | ~1790 | layered architecture, RBAC, Material UI |
+| 8 | Community Notice Board API + client | ~1790 | layered architecture, RBAC, shadcn/ui + Tailwind CSS |
 | 9 | Book Explorer (React only) | ~830 | custom hooks, Open Library API, MUI |
 | 10 | Profile Viewer API + client | ~1030 | Google OIDC + PKCE (`openid-client`), cookie sessions, i18n |
 | 11 | Secure Application API + client | ~1120 | intentionally vulnerable OWASP demo |
@@ -149,9 +149,11 @@ added. "Bun feature" is what the week can show off about the toolchain.
   uses the JSON envelope (login returned `token` outside `data`, 404 was plain
   text).
 
-### Week 8 – Layered architecture, RBAC, Material UI (`week-08/community-notice-board-*`)
-- Same: users/admins, notifications, `withAuth`/`withAdmin`, admin seed script,
-  MUI client.
+### Week 8 – Layered architecture, RBAC, shadcn/ui (`week-08/community-notice-board-*`)
+- Same: users/admins, notifications, `withAuth`/`withAdmin`, admin seed script.
+- Client (changed 10/2026): shadcn/ui components with Tailwind CSS instead of
+  MUI, set up like Bun's `bun init --react=shadcn` template (`bun-plugin-tailwind`
+  in `bunfig.toml` for the dev server, `build.ts` for production builds).
 - Structure: `routes → handlers → services → repositories → db`, with DTOs in
   `shared/` and entities in the API only, plus mapper functions between them.
 - Added: `AppError` hierarchy (`BadRequest`, `Unauthorized`, `Forbidden`,

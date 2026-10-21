@@ -1,6 +1,10 @@
 import { useState, type SubmitEvent } from "react";
-import { Link as RouterLink, useNavigate } from "react-router";
-import { Alert, Box, Button, Link, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Link, useNavigate } from "react-router";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { register } from "../api";
 
 export default function RegisterPage() {
@@ -28,45 +32,60 @@ export default function RegisterPage() {
   }
 
   return (
-    <Paper sx={{ p: 4, maxWidth: 480, mx: "auto" }}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        Register
-      </Typography>
+    <Card className="mx-auto max-w-md">
+      <CardHeader>
+        <CardTitle>
+          <h1 className="text-2xl">Register</h1>
+        </CardTitle>
+      </CardHeader>
 
-      <Box component="form" onSubmit={handleSubmit} sx={{ display: "grid", gap: 2, mt: 2 }}>
-        <TextField
-          label="Email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          helperText="At least 8 characters, with upper- and lowercase letters, a number and a special character."
-          required
-          fullWidth
-        />
+      <CardContent>
+        <form onSubmit={handleSubmit} className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              aria-describedby="password-help"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <p id="password-help" className="text-sm text-muted-foreground">
+              At least 8 characters, with upper- and lowercase letters, a number and a special character.
+            </p>
+          </div>
 
-        {error && <Alert severity="error">{error}</Alert>}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        <Button type="submit" variant="contained" size="large" disabled={loading}>
-          {loading ? "Registering…" : "Register"}
+          <Button type="submit" size="lg" disabled={loading}>
+            {loading ? "Registering…" : "Register"}
+          </Button>
+        </form>
+      </CardContent>
+
+      <CardFooter className="justify-center gap-1 text-sm">
+        Already registered?
+        <Button variant="link" className="h-auto p-0" asChild>
+          <Link to="/login">Log in</Link>
         </Button>
-
-        <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
-          <Typography variant="body2">Already registered?</Typography>
-          <Link component={RouterLink} to="/login" variant="body2">
-            Log in
-          </Link>
-        </Stack>
-      </Box>
-    </Paper>
+      </CardFooter>
+    </Card>
   );
 }

@@ -24,9 +24,11 @@
     "skipLibCheck": true,
 
     // "@shared/types" points to ../shared/types.ts, the API contract shared
-    // with the back-end.
+    // with the back-end. "@/components/ui/button" points to
+    // src/components/ui/button.tsx (the alias shadcn/ui uses).
     "paths": {
-      "@shared/*": ["../shared/*"]
+      "@shared/*": ["../shared/*"],
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src"]

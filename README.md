@@ -22,7 +22,7 @@ explains what changed and why.
 | [5](week-05/README.md) | File system & uploads | Image Gallery | `multipart/form-data`, `Bun.file`/`Bun.write`, magic-byte checks, middleware |
 | [6](week-06/README.md) | SQL database | Image Gallery v2 | Bun's built-in PostgreSQL client, parameterised queries, repositories, `.env` |
 | [7](week-07/README.md) | Authentication | Secret Notes | `Bun.password` (Argon2id), JWT, React Router, protected routes |
-| [8](week-08/README.md) | Layered architecture | Community Notice Board | Routes → handlers → services → repositories, DTO vs entity, RBAC, `AppError`, Material UI |
+| [8](week-08/README.md) | Layered architecture | Community Notice Board | Routes → handlers → services → repositories, DTO vs entity, RBAC, `AppError`, shadcn/ui + Tailwind CSS |
 | [9](week-09/README.md) | Advanced React | Book Explorer | Custom hooks, debouncing, race conditions, pagination, `memo`/`useCallback` |
 | [10](week-10/README.md) | OAuth 2.0 / OIDC | Profile Viewer | Google sign-in with PKCE, `HttpOnly` sessions, i18n (en/fi), a mock identity provider |
 | [11](week-11/README.md) | Secure applications | Security demo | OWASP Top 10:2025, vulnerable vs. secure side by side, rate limiting, supply-chain security |

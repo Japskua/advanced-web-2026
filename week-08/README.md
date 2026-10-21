@@ -1,4 +1,4 @@
-# Week 8 – Layered architecture, RBAC and Material UI
+# Week 8 – Layered architecture, RBAC and shadcn/ui
 
 The **Community Notice Board** has two kinds of users. Everyone who registers
 can read the notifications; **administrators** can also publish notifications
@@ -8,7 +8,7 @@ This is also the week where the back-end structure that has grown since week 4
 is completed: **routes → handlers → services → repositories → database**, with
 a clear rule for what belongs in each layer, **DTOs** separated from
 **entities**, and errors handled in one place. The front-end switches from
-hand-written CSS to the **Material UI** component library.
+hand-written CSS to **shadcn/ui** components styled with **Tailwind CSS**.
 
 ## Learning objectives
 
@@ -20,7 +20,7 @@ After this week you can:
 - throw typed application errors and convert them to responses in one central handler
 - validate and sanitise input at the edge of the application, with messages a user can act on
 - seed an initial administrator safely
-- build a React UI with Material UI: theme, layout, forms, tables, dialogs
+- build a React UI with shadcn/ui and Tailwind CSS: theme, layout, forms, tables, dialogs
 - subscribe React components to state that lives outside React (`useSyncExternalStore`)
 
 ## What you build
@@ -86,13 +86,14 @@ week-08/
 │       ├── config.ts
 │       └── util/                      jwt.ts, response.ts, validation.ts
 └── community-notice-board-client/src/
-    ├── main.tsx                       ThemeProvider, CssBaseline, BrowserRouter
-    ├── theme.ts                       MUI theme
+    ├── main.tsx                       BrowserRouter (no theme provider needed)
+    ├── index.css                      Tailwind CSS + the theme (CSS variables)
     ├── App.tsx                        routes with ProtectedRoute / AdminRoute
     ├── auth.ts                        token store with change events
     ├── hooks/useAuth.ts               login state via useSyncExternalStore
     ├── api.ts                         request<T>(); clears the token on 401
     ├── components/                    AppLayout, ProtectedRoute, AdminRoute
+    ├── components/ui/                 shadcn/ui components (copied in by `shadcn add`, yours to edit)
     └── pages/                         Login, Register, Notifications, AdminNewNotification, AdminUsers
 ```
 
@@ -243,43 +244,72 @@ would tell attackers the policy and lock out users whose passwords predate it.
 
 ## Concepts: the front-end
 
-### Material UI
+### shadcn/ui and Tailwind CSS
 
-[Material UI (MUI)](https://mui.com/material-ui/) is a library of ready-made
-React components: buttons, text fields, tables, dialogs, layout. Install it
-with its styling engine:
+[shadcn/ui](https://ui.shadcn.com/) is a set of ready-made React components:
+buttons, inputs, cards, tables, dialogs. Unlike most component libraries it is
+**not a package you install**: the `shadcn` command copies each component's
+source code into `src/components/ui/`, and from then on it is your code. Open
+`button.tsx` and you can see exactly how the button is built, and change it.
+
+The components are built on [Radix UI](https://www.radix-ui.com/) primitives,
+which handle the hard parts of accessibility (keyboard use, focus, ARIA roles),
+and are styled with **[Tailwind CSS](https://tailwindcss.com/)**. Tailwind
+styles an element with small utility classes in `className` instead of a
+separate stylesheet:
+
+```tsx
+<Card className="mx-auto max-w-md">          {/* centred, at most 28rem wide */}
+  <form onSubmit={handleSubmit} className="grid gap-4">
+    <div className="grid gap-2">
+      <Label htmlFor="email">Email</Label>
+      <Input id="email" type="email" required />
+    </div>
+    <Button type="submit">Login</Button>
+  </form>
+</Card>
+```
+
+`p-4` is a padding of 1rem (16px), `gap-2` puts 0.5rem between grid or flex
+items, `mx-auto` centres horizontally, and `text-muted-foreground` uses a colour
+from the theme. Only the classes the app uses end up in the CSS bundle.
+
+**Setting it up.** Bun has its own template for this (`bun init --react=shadcn`);
+the week 8 client uses the same pieces:
 
 ```bash
-bun add @mui/material @emotion/react @emotion/styled
+bun add radix-ui class-variance-authority cn lucide-react
+bun add -d tailwindcss bun-plugin-tailwind tw-animate-css
+bunx shadcn@latest add button card input label textarea alert alert-dialog badge table spinner
 ```
 
-```tsx
-<ThemeProvider theme={theme}>     {/* colours, typography, shape for every component */}
-  <CssBaseline />                 {/* a CSS reset */}
-  <App />
-</ThemeProvider>
-```
+- `src/index.css` starts with `@import "tailwindcss"` and holds the **theme**:
+  CSS variables such as `--primary` that every component reads. Changing
+  `--primary` recolours every primary button and the header. `index.html` loads
+  the file with a `<link>`.
+- `bunfig.toml` gives Bun's dev server (`bun ./index.html`) the Tailwind plugin:
+  `[serve.static] plugins = ["bun-plugin-tailwind"]`. `bun build` on the
+  command line cannot load plugins, so `bun run build` runs `build.ts`, which
+  calls `Bun.build()` with the plugin.
+- `components.json` tells the `shadcn` command where components go, and
+  `tsconfig.json` maps `@/*` to `src/*`, so the components import each other as
+  `@/components/ui/button`.
 
-Components are configured with props and styled with **`sx`**, which accepts
-CSS plus theme shortcuts:
+Things to point out in the pages:
 
-```tsx
-<Paper sx={{ p: 4, maxWidth: 480, mx: "auto" }}>      {/* padding 32px, centred */}
-  <Box component="form" onSubmit={handleSubmit} sx={{ display: "grid", gap: 2 }}>
-    <TextField label="Email" type="email" required fullWidth />
-    <Button type="submit" variant="contained">Login</Button>
-  </Box>
-</Paper>
-```
-
-Other things to point out in the pages: `component={RouterLink}` makes an MUI
-`Button` or `Link` navigate with React Router; `Table` for the user list;
-`Dialog` for the delete confirmation; `Alert` for messages.
-
-> **MUI 9 note.** Layout props such as `justifyContent` are no longer accepted
-> directly on `Stack`/`Box`; put them in `sx`:
-> `<Stack direction="row" sx={{ justifyContent: "center" }}>`. Many tutorials
-> online still show the old style.
+- Components are configured with props: `<Button variant="destructive" size="sm">`.
+- `asChild` makes a `Button` render its child instead, here a React Router
+  `<Link>`: the button's look with client-side navigation.
+- A `className` you pass is merged with the component's own classes (the `cn()`
+  helper), and yours wins. `AppLayout` uses that for the header buttons' hover colour.
+- `Label` + `Input` are tied together with `htmlFor`/`id`, so a click on the
+  label focuses the field and screen readers announce it.
+- `Table` for the user list; `Alert` for messages (it has `role="alert"`, so
+  screen readers read it out).
+- `AlertDialog` for the delete confirmation: it has `role="alertdialog"`, keeps
+  the focus inside while open, and Escape cancels. Its action button closes the
+  dialog by itself, so `AdminUsersPage` calls `e.preventDefault()` to keep it
+  open until the API has answered.
 
 ### Login state that React can observe
 
@@ -342,7 +372,8 @@ the API's `withAdmin`, which answers `403` regardless of what the browser shows.
 
 **Front-end**
 
-10. `bun add @mui/material @emotion/react @emotion/styled`; theme and providers.
+10. Tailwind and shadcn/ui: `bun add …`, `bunx shadcn@latest add …`, the theme in
+    `src/index.css`, `bunfig.toml` and `build.ts`.
 11. `auth.ts` with events, `useAuth`, `api.ts` with the 401 rule.
 12. `AppLayout`, `ProtectedRoute`, `AdminRoute`, `App.tsx`.
 13. The pages. Demonstrate: a normal user opening `/admin/users`; deleting a
@@ -356,9 +387,10 @@ the API's `withAdmin`, which answers `403` regardless of what the browser shows.
 - `Bun.password` replaces bcrypt; no permission flags.
 - New: `AppError` classes with a central handler; entity/DTO split with
   mappers; `GET /api/auth/me`; fresh user lookup in `withAuth`; validation
-  messages listing the password rules; user list with a confirmation dialog.
+  messages listing the password rules; user list with a confirmation dialog;
+  shadcn/ui and Tailwind CSS instead of Material UI.
 - Fixed: no `"dev-secret"` fallback for `JWT_SECRET`; login no longer applies
-  the password policy; malformed ids give `400`; MUI updated to version 9.
+  the password policy; malformed ids give `400`.
 
 ## Exercises
 
@@ -378,5 +410,7 @@ the API's `withAdmin`, which answers `403` regardless of what the browser shows.
 - [Martin Fowler: Presentation Domain Data Layering](https://martinfowler.com/bliki/PresentationDomainDataLayering.html)
 - [Martin Fowler: Data Transfer Object](https://martinfowler.com/eaaCatalog/dataTransferObject.html)
 - [OWASP: Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
-- [Material UI: Getting started](https://mui.com/material-ui/getting-started/)
+- [shadcn/ui: Components](https://ui.shadcn.com/docs/components)
+- [Tailwind CSS: Styling with utility classes](https://tailwindcss.com/docs/styling-with-utility-classes)
+- [Bun: Full-stack dev server and bundler (includes Tailwind CSS)](https://bun.sh/docs/bundler/fullstack)
 - [react.dev: useSyncExternalStore](https://react.dev/reference/react/useSyncExternalStore)

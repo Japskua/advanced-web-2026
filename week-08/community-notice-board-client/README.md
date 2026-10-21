@@ -1,6 +1,6 @@
 # Community Notice Board client (week 8)
 
-Material UI client with role-aware navigation, admin pages (publish notifications, manage users) and login state through `useSyncExternalStore`.
+React client built with shadcn/ui and Tailwind CSS: role-aware navigation, admin pages (publish notifications, manage users) and login state through `useSyncExternalStore`.
 
 **Lecture notes:** [week-08/README.md](../README.md) explains every concept in this project step by step.
 
@@ -20,9 +20,10 @@ This is one half of a full-stack app; start the other half too: [`community-noti
 | Command | What it does |
 | ------- | ------------ |
 | `bun run dev` | Dev server with hot reload |
-| `bun run build` | Production build into `dist/` |
+| `bun run build` | Production build into `dist/` (`build.ts`: `Bun.build()` with the Tailwind plugin) |
 | `bun run typecheck` | Type-check with `tsc` (Bun runs TypeScript but never checks it) |
 
 ## Notes
 
 - Types shared with the other half of the app live in [`week-08/shared/`](../shared) and are imported as `@shared/…` (a path alias in `tsconfig.json`). When copying this project elsewhere, copy `shared/` next to it.
+- shadcn/ui components live in `src/components/ui/`. Add more with `bunx shadcn@latest add <name>` (settings in `components.json`). The theme (colours, radius) is the CSS variables in `src/index.css`.

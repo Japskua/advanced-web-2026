@@ -1,6 +1,10 @@
 import { useState, type SubmitEvent } from "react";
-import { Link as RouterLink, useLocation, useNavigate } from "react-router";
-import { Alert, Box, Button, Link, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Link, useLocation, useNavigate } from "react-router";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { login } from "../api";
 import { setToken } from "../auth";
 
@@ -32,47 +36,63 @@ export default function LoginPage() {
   }
 
   return (
-    <Paper sx={{ p: 4, maxWidth: 480, mx: "auto" }}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        Login
-      </Typography>
+    <Card className="mx-auto max-w-md">
+      <CardHeader>
+        <CardTitle>
+          <h1 className="text-2xl">Login</h1>
+        </CardTitle>
+      </CardHeader>
 
-      {/* component="form" renders the Box as a <form> element. */}
-      <Box component="form" onSubmit={handleSubmit} sx={{ display: "grid", gap: 2, mt: 2 }}>
-        {state?.message && <Alert severity="success">{state.message}</Alert>}
+      <CardContent>
+        <form onSubmit={handleSubmit} className="grid gap-4">
+          {state?.message && (
+            <Alert>
+              <AlertDescription>{state.message}</AlertDescription>
+            </Alert>
+          )}
 
-        <TextField
-          label="Email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          fullWidth
-        />
+          {/* A Label is tied to its Input with htmlFor/id, so clicking the label focuses the field. */}
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-        {error && <Alert severity="error">{error}</Alert>}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        <Button type="submit" variant="contained" size="large" disabled={loading}>
-          {loading ? "Logging in…" : "Login"}
+          <Button type="submit" size="lg" disabled={loading}>
+            {loading ? "Logging in…" : "Login"}
+          </Button>
+        </form>
+      </CardContent>
+
+      <CardFooter className="justify-center gap-1 text-sm">
+        No account?
+        <Button variant="link" className="h-auto p-0" asChild>
+          <Link to="/register">Register</Link>
         </Button>
-
-        <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
-          <Typography variant="body2">No account?</Typography>
-          <Link component={RouterLink} to="/register" variant="body2">
-            Register
-          </Link>
-        </Stack>
-      </Box>
-    </Paper>
+      </CardFooter>
+    </Card>
   );
 }
