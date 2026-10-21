@@ -1,6 +1,16 @@
+# Bun configuration for the week 12 client.
+
+[install]
+# Same supply-chain rule as the repository's bunfig.toml (Bun reads the
+# bunfig.toml of the folder you run it in): only versions public for 3 days.
+minimumReleaseAge = 259200 # seconds
+
 # Let the dev server (`bun run dev`) inline environment variables that start
 # with BUN_PUBLIC_ into the browser code. Only those: everything else in the
 # environment (secrets!) stays out of the bundle. `bun run build` does the same
-# with --env='BUN_PUBLIC_*'.
+# with the same setting in build.ts.
 [serve.static]
 env = "BUN_PUBLIC_*"
+# Tailwind CSS for the dev server: the plugin turns the @import "tailwindcss" in
+# src/index.css into the CSS for the classes the app uses.
+plugins = ["bun-plugin-tailwind"]

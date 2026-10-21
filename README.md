@@ -103,5 +103,5 @@ and one lockfile for everything.
 ## Versions
 
 Written and tested with Bun 1.4, TypeScript 6.0, React 19.3, React Router 8,
-Material UI 9, PostgreSQL 18. TypeScript stays on 6.0 because
+shadcn/ui with Tailwind CSS 4, PostgreSQL 18. TypeScript stays on 6.0 because
 `typescript-eslint` does not support TypeScript 7 yet.

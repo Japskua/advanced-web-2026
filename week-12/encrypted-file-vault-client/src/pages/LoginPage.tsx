@@ -1,6 +1,9 @@
 import { useState, type SubmitEvent } from "react";
-import { Link as RouterLink, useLocation, useNavigate } from "react-router";
-import { Alert, Box, Button, Link, Stack, TextField, Typography } from "@mui/material";
+import { Link, useLocation, useNavigate } from "react-router";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "../auth/useAuth";
 import { AuthPageLayout } from "../components/AuthPageLayout";
 import { errorMessage } from "../format";
@@ -34,31 +37,44 @@ export function LoginPage() {
 
   return (
     <AuthPageLayout title="Encrypted File Vault" subtitle="Log in to your vault.">
-      <Box component="form" onSubmit={handleSubmit}>
-        <Stack spacing={2.5}>
-          {state?.message && <Alert severity="success">{state.message}</Alert>}
-          {error && <Alert severity="error">{error}</Alert>}
-          <TextField label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required fullWidth />
-          <TextField
-            label="Password"
+      <form onSubmit={handleSubmit} className="grid gap-4">
+        {state?.message && (
+          <Alert>
+            <AlertDescription>{state.message}</AlertDescription>
+          </Alert>
+        )}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {/* A Label is tied to its Input with htmlFor/id, so clicking the label focuses the field. */}
+        <div className="grid gap-2">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
             type="password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            fullWidth
           />
-          <Button type="submit" variant="contained" size="large" disabled={busy}>
-            {busy ? "Logging in…" : "Log in"}
+        </div>
+        <Button type="submit" size="lg" disabled={busy}>
+          {busy ? "Logging in…" : "Log in"}
+        </Button>
+        <div className="flex flex-wrap items-center justify-center gap-1 text-sm">
+          No account?
+          {/* `asChild` renders the Button as its child, a React Router <Link>: the link's look, client-side navigation. */}
+          <Button variant="link" className="h-auto p-0" asChild>
+            <Link to="/register">Register with an invitation code</Link>
           </Button>
-          <Typography variant="body2" sx={{ textAlign: "center" }}>
-            No account?{" "}
-            <Link component={RouterLink} to="/register">
-              Register with an invitation code
-            </Link>
-          </Typography>
-        </Stack>
-      </Box>
+        </div>
+      </form>
     </AuthPageLayout>
   );
 }

@@ -80,12 +80,18 @@ week-10/
 │   └── tests/oidc-flow.test.ts      the whole flow against the mock provider
 └── profile-viewer-client/src/
     ├── main.tsx                     imports ./i18n before rendering
+    ├── index.css                    Tailwind CSS + the theme (CSS variables)
     ├── App.tsx                      "/" and a RequireSession layout route around "/profile"
     ├── api.ts                       fetch with credentials: "include"
     ├── i18n/                        index.ts (setup, typed keys), en.ts, fi.ts
     ├── components/                  LanguageSwitcher, PageShell, RequireSession
+    ├── components/ui/               shadcn/ui components (Select, Label, Card, Avatar, …)
     └── pages/                       LoginPage, ProfilePage
 ```
+
+The client is built with **shadcn/ui** components and **Tailwind CSS**, set up
+exactly as in week 8 (`bunfig.toml`, `build.ts`, `components.json`, the theme in
+`src/index.css`); see [week 8: shadcn/ui and Tailwind CSS](../week-08/README.md#shadcnui-and-tailwind-css).
 
 ---
 
@@ -293,6 +299,11 @@ Details worth copying:
 - **Initial language**: the saved choice, else the browser's language
   (`navigator.language`), else English. `fallbackLng` covers missing keys.
 - **`<html lang>`** is updated on every change, for screen readers and spell checkers.
+- **The language switcher** is a shadcn/ui `Select`:
+  `onValueChange={(language) => void i18n.changeLanguage(language)}`, one
+  `SelectItem` per entry of `LANGUAGES`, so a new language appears in it
+  automatically. A `Label` with `htmlFor` gives it its name ("Language"), and
+  each item has `lang={code}` so a screen reader says "Suomi" in Finnish.
 - **Formats are localised too**: `Intl.DateTimeFormat(i18n.resolvedLanguage, …)`
   shows "Oct 12, 2026, 12:11 PM" in English and "12.10.2026 klo 12.11" in Finnish.
 - **Error codes, not messages, in URLs.** The API redirects to `/?error=login_failed`;
@@ -310,8 +321,8 @@ Details worth copying:
    `document.cookie` in the console.
 5. Run the flow against the mock provider, then against Google.
 6. Client: `api.ts` with `credentials: "include"`, `RequireSession`, the pages.
-7. i18n: `en.ts`, `fi.ts`, `i18n/index.ts`, `LanguageSwitcher`; demonstrate a
-   typo in a key and a missing Finnish key.
+7. i18n: `en.ts`, `fi.ts`, `i18n/index.ts`, `LanguageSwitcher` (a shadcn/ui
+   `Select`); demonstrate a typo in a key and a missing Finnish key.
 
 ## Compared with last year's Deno version
 
@@ -321,7 +332,8 @@ Details worth copying:
   envelope; cookies get `Secure` on HTTPS; the login page explains failures;
   the language choice persists and sets `<html lang>`.
 - New: the mock provider and an automated test of the whole flow; typed
-  translation keys; the layout route that fetches the profile once.
+  translation keys; the layout route that fetches the profile once; shadcn/ui
+  and Tailwind CSS instead of Material UI (as in week 8).
 
 ## Configuring Google Cloud (do this last)
 

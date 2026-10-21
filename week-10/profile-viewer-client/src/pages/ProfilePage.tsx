@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router";
-import { Avatar, Button, Chip, Stack, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { UserProfile } from "@shared/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { logout } from "../api";
 import PageShell from "../components/PageShell";
 
@@ -31,39 +33,48 @@ export default function ProfilePage() {
 
   return (
     <PageShell>
-      <Stack spacing={3} sx={{ alignItems: "center", textAlign: "center" }}>
-        <Typography variant="h4" component="h1">
-          {t("profile.title")}
-        </Typography>
+      <div className="grid justify-items-center gap-6 text-center">
+        <h1 className="text-3xl font-semibold">{t("profile.title")}</h1>
 
-        <Avatar src={user.picture} alt={user.name} sx={{ width: 96, height: 96, fontSize: 40 }}>
-          {user.name.charAt(0)}
+        {/* The picture, or the first letter of the name while it loads or if
+            there is none. */}
+        <Avatar className="size-24">
+          <AvatarImage src={user.picture} alt={user.name} />
+          <AvatarFallback className="text-4xl">{user.name.charAt(0)}</AvatarFallback>
         </Avatar>
 
         {/* Interpolation: {{name}} in the translation is replaced. */}
-        <Typography variant="h5">{t("profile.welcome", { name: user.name })}</Typography>
+        <h2 className="text-xl">{t("profile.welcome", { name: user.name })}</h2>
 
-        <Stack spacing={1} sx={{ width: "100%", textAlign: "left" }}>
-          <Typography>
+        <div className="grid w-full gap-2 text-left">
+          <p>
             <strong>{t("profile.email")}:</strong> {user.email}{" "}
-            <Chip
-              size="small"
-              color={user.emailVerified ? "success" : "default"}
-              label={user.emailVerified ? t("profile.verified") : t("profile.notVerified")}
-            />
-          </Typography>
-          <Typography sx={{ wordBreak: "break-all" }}>
+            {/* The Badge has no green "success" variant: Tailwind classes in
+                className add one (they win over the component's own). */}
+            <Badge
+              variant="outline"
+              className={user.emailVerified ? "border-transparent bg-green-700 text-white" : undefined}
+            >
+              {user.emailVerified ? t("profile.verified") : t("profile.notVerified")}
+            </Badge>
+          </p>
+          <p className="break-all">
             <strong>{t("profile.userId")}:</strong> {user.sub}
-          </Typography>
-          <Typography>
+          </p>
+          <p>
             <strong>{t("profile.signedInAt")}:</strong> {signedInAt}
-          </Typography>
-        </Stack>
+          </p>
+        </div>
 
-        <Button variant="outlined" color="secondary" onClick={handleLogout} disabled={loggingOut}>
+        <Button
+          variant="outline"
+          className="border-secondary text-secondary hover:bg-secondary/10 hover:text-secondary"
+          onClick={handleLogout}
+          disabled={loggingOut}
+        >
           {t("profile.logout")}
         </Button>
-      </Stack>
+      </div>
     </PageShell>
   );
 }

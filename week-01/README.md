@@ -81,7 +81,7 @@ implements the **Web standard APIs** (`fetch`, `Request`, `Response`, `URL`,
 browser and in other runtimes.
 
 Bun installs packages from the normal npm registry, so the whole npm ecosystem
-(React, Material UI, `jose`, …) is available.
+(React, Tailwind CSS, `jose`, …) is available.
 
 ## 3. Creating the project
 

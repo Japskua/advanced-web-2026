@@ -74,4 +74,4 @@ Consequences, discussed in week 11:
 
 Request handlers (`(req: Request) => Response`), `fetch`, `URL`,
 `URLSearchParams`, `FormData`, `crypto.randomUUID()`, Web Crypto, `jose`,
-React components, MUI, i18next and the SQL itself.
+React components, i18next and the SQL itself (the UI library changed too: shadcn/ui instead of MUI).

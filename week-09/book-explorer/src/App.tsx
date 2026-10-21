@@ -1,18 +1,13 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import {
-  Alert,
-  Box,
-  CircularProgress,
-  Container,
-  Pagination,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { cn } from "cn";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { PAGE_SIZE } from "./api";
 import BookGrid from "./components/BookGrid";
 import ControlsBar from "./components/ControlsBar";
 import FavoritesPanel from "./components/FavoritesPanel";
+import Pager from "./components/Pager";
 import SearchBar from "./components/SearchBar";
 import { MIN_QUERY_LENGTH, useBookSearch } from "./hooks/useBookSearch";
 import { useDebouncedValue } from "./hooks/useDebouncedValue";
@@ -86,68 +81,70 @@ export default function App() {
   // --- Rendering -----------------------------------------------------------
   let results: ReactNode;
   if (queryTooShort) {
-    results = <Typography color="text.secondary">Type at least {MIN_QUERY_LENGTH} characters to search.</Typography>;
+    results = <p className="text-muted-foreground">Type at least {MIN_QUERY_LENGTH} characters to search.</p>;
   } else if (error) {
-    results = <Alert severity="error">{error}</Alert>;
+    results = (
+      <Alert variant="destructive">
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
   } else if (loading && books.length === 0) {
     results = (
-      <Box sx={{ textAlign: "center", py: 6 }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center py-12">
+        <Spinner className="size-8 text-primary" />
+      </div>
     );
   } else if (!loading && books.length === 0) {
-    results = <Typography color="text.secondary">No books found for “{debouncedQuery}”.</Typography>;
+    results = <p className="text-muted-foreground">No books found for “{debouncedQuery}”.</p>;
   } else {
     results = (
-      <Stack spacing={2}>
-        <Typography variant="body2" color="text.secondary">
+      <div className="grid gap-4">
+        <p className="text-sm text-muted-foreground">
           {total.toLocaleString()} results · page {page} of {pageCount}
           {onlyWithCover && ` · showing ${visibleBooks.length} with a cover`}
-        </Typography>
+        </p>
 
-        {/* While the next page loads, the previous one stays visible, dimmed. */}
-        <Box sx={{ opacity: loading ? 0.5 : 1, transition: "opacity 150ms" }} aria-busy={loading}>
+        {/*
+          While the next page loads, the previous one stays visible, dimmed.
+          cn() joins class names and leaves out false ones: "opacity-50" only
+          while loading.
+        */}
+        <div className={cn("transition-opacity duration-150", loading && "opacity-50")} aria-busy={loading}>
           <BookGrid books={visibleBooks} favoriteKeys={favoriteKeys} onToggleFavorite={toggleFavorite} />
-        </Box>
+        </div>
 
-        {pageCount > 1 && (
-          <Pagination
-            count={pageCount}
-            page={page}
-            onChange={(_event, value) => handlePageChange(value)}
-            color="primary"
-            sx={{ alignSelf: "center" }}
-          />
-        )}
-      </Stack>
+        {pageCount > 1 && <Pager count={pageCount} page={page} onPageChange={handlePageChange} />}
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Stack spacing={3}>
-        <Paper sx={{ p: 3 }}>
-          <Stack spacing={2}>
-            <Typography variant="h4" component="h1">
-              Book Explorer
-            </Typography>
-            <SearchBar query={query} onQueryChange={handleQueryChange} />
-            <ControlsBar
-              sort={sort}
-              onSortChange={handleSortChange}
-              onlyWithCover={onlyWithCover}
-              onOnlyWithCoverChange={setOnlyWithCover}
-            />
-          </Stack>
-        </Paper>
+    <div className="mx-auto grid max-w-screen-2xl gap-6 px-4 py-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <h1 className="text-3xl">Book Explorer</h1>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <SearchBar query={query} onQueryChange={handleQueryChange} />
+          <ControlsBar
+            sort={sort}
+            onSortChange={handleSortChange}
+            onlyWithCover={onlyWithCover}
+            onOnlyWithCoverChange={setOnlyWithCover}
+          />
+        </CardContent>
+      </Card>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "300px 1fr" }, gap: 3 }}>
-          <FavoritesPanel favorites={favorites} onRemove={toggleFavorite} />
-          <Box component="section" aria-label="Search results">
-            {results}
-          </Box>
-        </Box>
-      </Stack>
-    </Container>
+      {/*
+        One column on small screens. From the lg breakpoint (1024px) up, two:
+        300px for the favourites and the rest (1fr) for the results.
+      */}
+      <div className="grid items-start gap-6 lg:grid-cols-[300px_1fr]">
+        <FavoritesPanel favorites={favorites} onRemove={toggleFavorite} />
+        <section aria-label="Search results">{results}</section>
+      </div>
+    </div>
   );
 }

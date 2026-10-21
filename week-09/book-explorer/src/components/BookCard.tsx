@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
-import { Button, Card, CardActions, CardContent, CardMedia, Stack, Typography } from "@mui/material";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { coverUrl } from "../api";
 import type { Book } from "../types";
 
@@ -27,42 +28,36 @@ function BookCard({ book, isFavorite, onToggleFavorite }: Readonly<Props>) {
   const showCover = book.coverId !== undefined && !coverFailed;
 
   return (
-    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    // pt-0 and overflow-hidden: the cover starts at the top edge, clipped to
+    // the card's rounded corners.
+    <Card className="gap-4 overflow-hidden pt-0">
       {showCover ? (
-        <CardMedia
-          component="img"
-          height="220"
-          image={coverUrl(book.coverId!)}
+        // h-55 = 55 × 0.25rem = 220px; object-contain shows the whole cover.
+        <img
+          src={coverUrl(book.coverId!)}
           alt={`Cover of ${book.title}`}
           loading="lazy"
           onError={() => setCoverFailed(true)}
-          sx={{ objectFit: "contain", bgcolor: "grey.100" }}
+          className="h-55 w-full bg-muted object-contain"
         />
       ) : (
-        <Stack sx={{ height: 220, alignItems: "center", justifyContent: "center", bgcolor: "grey.100" }}>
-          <Typography variant="body2" color="text.secondary">
-            No cover
-          </Typography>
-        </Stack>
+        <div className="flex h-55 items-center justify-center bg-muted text-sm text-muted-foreground">No cover</div>
       )}
 
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600 }} gutterBottom>
-          {book.title}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {book.authors.join(", ")}
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 1 }}>
+      <CardContent className="grow">
+        <h3 className="mb-1 font-semibold">{book.title}</h3>
+        <p className="text-sm text-muted-foreground">{book.authors.join(", ")}</p>
+        <p className="mt-2 text-sm">
           First published: {book.firstPublishYear ?? "unknown"} · {book.editionCount} editions
-        </Typography>
+        </p>
       </CardContent>
 
-      <CardActions>
-        <Button onClick={() => onToggleFavorite(book)} color={isFavorite ? "secondary" : "primary"}>
+      <CardFooter>
+        {/* Filled orange (the theme's secondary colour) while the book is a favourite. */}
+        <Button variant={isFavorite ? "secondary" : "outline"} size="sm" onClick={() => onToggleFavorite(book)}>
           {isFavorite ? "★ Remove favourite" : "☆ Add favourite"}
         </Button>
-      </CardActions>
+      </CardFooter>
     </Card>
   );
 }

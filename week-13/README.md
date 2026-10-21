@@ -89,4 +89,4 @@ bun build ./index.html --outdir=dist --production   # client production build
 - This repository: each week's README explains its concepts in depth.
 - [docs/project-structure.md](../docs/project-structure.md) shows how the API structure grew from week 1 to 12.
 - [Bun documentation](https://bun.sh/docs), [react.dev](https://react.dev),
-  [MUI](https://mui.com/material-ui/), [OWASP Cheat Sheets](https://cheatsheetseries.owasp.org/).
+  [shadcn/ui](https://ui.shadcn.com/docs/components), [Tailwind CSS](https://tailwindcss.com/docs), [OWASP Cheat Sheets](https://cheatsheetseries.owasp.org/).

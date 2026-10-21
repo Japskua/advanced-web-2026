@@ -21,7 +21,13 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+
+    // "@/components/ui/button" points to src/components/ui/button.tsx (the
+    // alias shadcn/ui uses).
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src"]
 }

@@ -40,7 +40,7 @@ Student-facing material lives in each `week-XX/README.md`.
 | 6 | Image Gallery v2 API + client | ~1030 | PostgreSQL via `jsr:@db/postgres`, repository layer |
 | 7 | Secret Notes API + client | ~1060 | JWT (`jose`), bcrypt (`jsr:@felix/bcrypt`), React Router |
 | 8 | Community Notice Board API + client | ~1790 | layered architecture, RBAC, shadcn/ui + Tailwind CSS |
-| 9 | Book Explorer (React only) | ~830 | custom hooks, Open Library API, MUI |
+| 9 | Book Explorer (React only) | ~830 | custom hooks, Open Library API, shadcn/ui + Tailwind CSS |
 | 10 | Profile Viewer API + client | ~1030 | Google OIDC + PKCE (`openid-client`), cookie sessions, i18n |
 | 11 | Secure Application API + client | ~1120 | intentionally vulnerable OWASP demo |
 | 12 | Encrypted File Vault API + client | ~3560 | Web Crypto, Azure Blob Storage, Docker, Azure deployment |
@@ -57,7 +57,7 @@ because Bun has no runtime permission sandbox (see §6).
 | Decision | Choice | Rationale |
 | -------- | ------ | --------- |
 | Back-end HTTP server | `Bun.serve` with the declarative `routes` table (week 1 starts with the bare `fetch` handler) | Built in, typed route params (`req.params.id`), per-method handlers. No framework needed, so students still see the raw `Request`/`Response` model. |
-| Front-end tooling | **Bun-native**: HTML imports, `bun ./index.html` dev server, `bun build` | One tool for runtime, packages, bundling and tests. One `tsconfig.json` instead of three, no `vite.config.ts`. Verified: HMR, SPA fallback for React Router, `BUN_PUBLIC_*` env inlining, MUI and i18next bundling. |
+| Front-end tooling | **Bun-native**: HTML imports, `bun ./index.html` dev server, `bun build` (from week 8 on `bun run build` → `build.ts`, i.e. `Bun.build()` with `bun-plugin-tailwind`, which the `bun build` CLI cannot load) | One tool for runtime, packages, bundling and tests. One `tsconfig.json` instead of three, no `vite.config.ts`. Verified: HMR, SPA fallback for React Router, `BUN_PUBLIC_*` env inlining, Tailwind CSS with shadcn/ui (earlier MUI) and i18next bundling. |
 | Database driver | Bun's built-in `SQL` (`import { SQL } from "bun"`) | Removes `jsr:@db/postgres`. Tagged templates are parameterised by construction, which ties directly into the week 11 injection lecture. |
 | Password hashing | `Bun.password` (argon2id by default, bcrypt available) | Removes `jsr:@felix/bcrypt`. |
 | Cookies | `req.cookies` (`Bun.CookieMap`) | Replaces the hand-written cookie parser in week 10. |
@@ -75,7 +75,7 @@ because Bun has no runtime permission sandbox (see §6).
 | Linting | One ESLint 10 flat config at the repository root, with `react-hooks` rules | Keeps per-project folders small; the hooks rules reinforce the `useEffect` lectures. |
 | Tests | `bun test` in every back-end, plus pure-logic tests where useful | Verifies the port, and doubles as a reference for CodeGrade-style automatic grading. |
 | Ports | APIs on `8000`, clients on `5173` | Same as upstream, so the Google Cloud instructions (redirect URIs) are unchanged. |
-| Dependencies | Latest stable majors (React 19.3, React Router 8, MUI 9, i18next 26) | Verified to typecheck and bundle with Bun 1.4.2 before adoption. |
+| Dependencies | Latest stable majors (React 19.3, React Router 8, i18next 26); UI from week 8 on with shadcn/ui (Radix UI + Tailwind CSS 4) instead of MUI 9 since 10/2026 | Verified to typecheck and bundle with Bun 1.4.2 (shadcn/ui with 1.4.3) before adoption. |
 | Install policy | Root `bunfig.toml`: `minimumReleaseAge = 259200` (3 days) | Supply-chain hygiene taught in week 11. It immediately blocked `@types/bun@1.4.3` (published that day), so version floors were set to releases older than three days (`@types/bun ^1.4.2`, `@mui/material ^9.4.0`, `i18next ^26.4.2`). |
 | Week 10 testing | A small mock OpenID provider (`dev/mock-oidc-provider.ts`) | The whole OIDC flow (state, nonce, PKCE, signed ID tokens) is tested automatically and can be developed without a Google Cloud project. |
 | Week 12 image | `bun build` bundles the API and its dependencies into one file; the image is `oven/bun:1.4-alpine` + that file, running as the `bun` user | No `node_modules` or lockfile juggling inside Docker (the workspace lockfile lives at the repository root). |
@@ -163,7 +163,10 @@ added. "Bun feature" is what the week can show off about the toolchain.
 
 ### Week 9 – Advanced React (`week-09/book-explorer`)
 - Same: Open Library search, `useBookSearch` (fetch + abort),
-  `useLocalStorage<T>`, `useMemo` for derived data, MUI layout.
+  `useLocalStorage<T>`, `useMemo` for derived data.
+- Client (changed 10/2026): shadcn/ui components with Tailwind CSS instead of
+  MUI, set up like week 8; a small `Pager` of shadcn/ui `Button`s replaces
+  MUI's `Pagination`.
 - Added from the original plan: **pagination** (page reset in the event
   handlers, not an effect) with **server-side sorting** (sorting one page on
   the client would be wrong), a reusable `useDebouncedValue` hook, and

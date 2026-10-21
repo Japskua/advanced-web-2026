@@ -10,14 +10,15 @@
  */
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router";
-import { Box, CircularProgress } from "@mui/material";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "../auth/useAuth";
 
+// The Spinner has role="status" and aria-label="Loading" for screen readers.
 function FullPageSpinner() {
   return (
-    <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
-      <CircularProgress aria-label="Loading" />
-    </Box>
+    <div className="grid min-h-screen place-items-center">
+      <Spinner className="size-8 text-primary" />
+    </div>
   );
 }
 
