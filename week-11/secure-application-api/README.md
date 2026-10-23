@@ -9,7 +9,8 @@ An OWASP Top 10 demo in two versions with the same endpoints: `src/vulnerable/` 
 ```bash
 docker compose up -d        # in the repository root: PostgreSQL
 bun install
-cp .env.example .env        # or `bun run setup:env` in the repository root
+bun run setup:env           # in the repository root: .env with a random JWT_SECRET
+                            # (or cp .env.example .env, then replace JWT_SECRET yourself)
 bun run db:setup
 bun run dev:vulnerable      # and, in another terminal: bun run dev:secure
 ```
@@ -30,7 +31,8 @@ This is one half of a full-stack app; start the other half too: [`secure-applica
 
 ## Configuration
 
-Bun loads `.env` automatically. `.env.example` contains working values for local development:
+Bun loads `.env` automatically. `.env.example` contains working values for local development, except `JWT_SECRET`:
+both versions refuse to start while it is the placeholder.
 
 | Variable | Purpose |
 | -------- | ------- |
