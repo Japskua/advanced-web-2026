@@ -24,7 +24,7 @@ Object.assign(process.env, {
   GOOGLE_CLIENT_SECRET: "test-secret",
 });
 
-const { routes, fallback, errorHandler } = await import("../src/routes");
+const { app } = await import("../src/app");
 
 let server: Server<undefined>;
 
@@ -33,7 +33,7 @@ let server: Server<undefined>;
 const consoleError = spyOn(console, "error").mockImplementation(() => {});
 
 beforeAll(() => {
-  server = Bun.serve({ port: apiPort, routes, fetch: fallback, error: errorHandler });
+  server = Bun.serve({ port: apiPort, fetch: (req) => app.handle(req) });
 });
 
 afterAll(() => {

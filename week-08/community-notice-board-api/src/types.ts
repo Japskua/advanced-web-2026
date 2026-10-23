@@ -30,7 +30,7 @@ export interface NotificationWithAuthorEntity extends NotificationEntity {
   authorEmail: string;
 }
 
-// The user making the request, as established by withAuth().
+// The user making the request, as established by the auth macro (plugins/auth.ts).
 export interface AuthUser {
   id: string;
   email: string;

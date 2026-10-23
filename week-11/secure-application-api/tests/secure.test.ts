@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, describe, expect, spyOn, test } from "bun:test";
 import { ALLOWED_ORIGIN } from "../src/config";
 import { secureSql as sql } from "../src/db";
-import * as app from "../src/secure/routes";
+import { app, internalError } from "../src/secure/app";
 import { resetDatabase, SEED_NOTES, SEED_USERS } from "../src/seed";
 import { call, login, startApp, type TestApp } from "./helpers";
 
@@ -51,17 +51,19 @@ describe("A02 Security Misconfiguration: fixed", () => {
   });
 
   test("CORS allows only the client's origin", async () => {
-    const reply = await call(api.url, "OPTIONS", "/api/login", { headers: { Origin: "https://evil.example" } });
-    expect(reply.headers.get("access-control-allow-origin")).toBe(ALLOWED_ORIGIN);
+    const evil = await call(api.url, "OPTIONS", "/api/login", { headers: { Origin: "https://evil.example" } });
+    expect(evil.headers.get("access-control-allow-origin")).not.toBe("https://evil.example");
+    expect(evil.headers.get("access-control-allow-origin")).not.toBe("*");
+    const client = await call(api.url, "OPTIONS", "/api/login", { headers: { Origin: ALLOWED_ORIGIN } });
+    expect(client.headers.get("access-control-allow-origin")).toBe(ALLOWED_ORIGIN);
   });
 
   test("unexpected errors reveal nothing", async () => {
     const consoleError = spyOn(console, "error").mockImplementation(() => {});
-    const res = app.errorHandler(new Error('duplicate key value violates unique constraint "users_email_key"'));
+    const body = internalError(new Error('duplicate key value violates unique constraint "users_email_key"'));
     consoleError.mockRestore();
 
-    expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ ok: false, error: "Internal server error" });
+    expect(body).toEqual({ ok: false, error: "Internal server error" });
   });
 });
 

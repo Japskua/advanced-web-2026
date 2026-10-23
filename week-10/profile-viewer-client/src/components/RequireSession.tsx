@@ -11,9 +11,10 @@
  */
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router";
-import { Alert, Box, CircularProgress } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { UserProfile } from "@shared/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
 import { ApiError, fetchMe } from "../api";
 
 type SessionState =
@@ -44,17 +45,19 @@ export default function RequireSession() {
   switch (state.status) {
     case "loading":
       return (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
-          <CircularProgress aria-label={t("loading")} />
-        </Box>
+        <div className="mt-16 flex justify-center">
+          <Spinner className="size-8 text-primary" aria-label={t("loading")} />
+        </div>
       );
     case "signed-out":
       return <Navigate to="/" replace />;
     case "error":
       return (
-        <Alert severity="error" sx={{ m: 4 }}>
-          {t("errors.server")}
-        </Alert>
+        <div className="p-8">
+          <Alert variant="destructive">
+            <AlertDescription>{t("errors.server")}</AlertDescription>
+          </Alert>
+        </div>
       );
     case "signed-in":
       return <Outlet context={state.user} />;

@@ -8,9 +8,9 @@
 # --build` on the server builds the image there, for the server's own CPU
 # architecture (x86 or ARM).
 #
-# `bun build` bundles the application *and* every dependency (here: jose)
-# into one JavaScript file, so the image needs no node_modules, no package.json
-# and no install step: just Bun and that file.
+# `bun build` bundles the application *and* every dependency (here: Elysia,
+# its CORS plugin and jose) into one JavaScript file, so the image needs no
+# node_modules, no package.json and no install step: just Bun and that file.
 
 FROM oven/bun:1.4-alpine
 

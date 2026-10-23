@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Box, Container, Paper, Typography } from "@mui/material";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Props = {
   title: string;
@@ -9,20 +9,21 @@ type Props = {
 };
 
 // The centred card used by the login, register and onboarding pages.
+// `max-w-xl` is at most 36rem (576px) wide, `max-w-3xl` 48rem (768px).
 export function AuthPageLayout({ title, subtitle, maxWidth = "sm", children }: Readonly<Props>) {
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", bgcolor: "background.default", py: 4 }}>
-      <Container maxWidth={maxWidth}>
-        <Paper elevation={3} sx={{ p: { xs: 3, sm: 4 } }}>
-          <Box sx={{ mb: 3, textAlign: "center" }}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {title}
-            </Typography>
-            {subtitle && <Typography color="text.secondary">{subtitle}</Typography>}
-          </Box>
-          {children}
-        </Paper>
-      </Container>
-    </Box>
+    <div className="flex min-h-screen items-center py-8">
+      <div className={`mx-auto w-full px-4 ${maxWidth === "md" ? "max-w-3xl" : "max-w-xl"}`}>
+        <Card className="shadow-md">
+          <CardHeader className="text-center">
+            <CardTitle>
+              <h1 className="text-2xl">{title}</h1>
+            </CardTitle>
+            {subtitle && <CardDescription className="text-base">{subtitle}</CardDescription>}
+          </CardHeader>
+          <CardContent>{children}</CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

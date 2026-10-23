@@ -12,12 +12,12 @@
 import { sql } from "../src/db/client";
 import { findUserByEmail } from "../src/repositories/user-repository";
 import { registerUser } from "../src/services/auth-service";
-import { parseRegisterBody } from "../src/util/validation";
+import { cleanRegistration } from "../src/schemas";
 
 try {
-  const { email, password } = parseRegisterBody({
-    email: Bun.env.ADMIN_EMAIL,
-    password: Bun.env.ADMIN_PASSWORD,
+  const { email, password } = cleanRegistration({
+    email: Bun.env.ADMIN_EMAIL ?? "",
+    password: Bun.env.ADMIN_PASSWORD ?? "",
   });
 
   const existing = await findUserByEmail(email);

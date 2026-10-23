@@ -1,6 +1,8 @@
-import { useState, type SubmitEvent } from "react";
-import { Alert, Box, Button, Card, CardContent, Stack, Typography } from "@mui/material";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
+import { useRef, useState, type SubmitEvent } from "react";
+import { FileUpIcon } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MAX_FILE_BYTES } from "@shared/limits";
 import type { FileDto } from "@shared/types";
 import { uploadEncryptedFile } from "../api";
@@ -19,6 +21,8 @@ export function FileUploadForm({ onUploaded }: Readonly<Props>) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  // The browser's own file input is hidden; the "Choose file" button opens it.
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const tooLarge = file !== null && file.size > MAX_FILE_BYTES;
 
@@ -50,34 +54,52 @@ export function FileUploadForm({ onUploaded }: Readonly<Props>) {
 
   return (
     <Card>
-      <CardContent>
-        <Stack spacing={2}>
-          <Typography variant="h6" component="h2">
-            Upload a file
-          </Typography>
+      <CardHeader>
+        <CardTitle>
+          <h2 className="text-lg">Upload a file</h2>
+        </CardTitle>
+      </CardHeader>
 
-          {!key && <Alert severity="warning">Unlock the vault with your key to upload files.</Alert>}
-          {error && <Alert severity="error">{error}</Alert>}
-          {success && <Alert severity="success">{success}</Alert>}
-          {tooLarge && <Alert severity="error">Files may be at most {formatBytes(MAX_FILE_BYTES)}.</Alert>}
+      <CardContent className="grid gap-4">
+        {!key && (
+          <Alert className="border-amber-300 bg-amber-50 text-amber-900">
+            <AlertDescription className="text-amber-900">Unlock the vault with your key to upload files.</AlertDescription>
+          </Alert>
+        )}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {success && (
+          <Alert>
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
+        {tooLarge && (
+          <Alert variant="destructive">
+            <AlertDescription>Files may be at most {formatBytes(MAX_FILE_BYTES)}.</AlertDescription>
+          </Alert>
+        )}
 
-          <Box component="form" onSubmit={handleSubmit}>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: { sm: "center" } }}>
-              <Button variant="outlined" component="label" disabled={!key || busy}>
-                {file ? `${file.name} (${formatBytes(file.size)})` : "Choose file"}
-                <input hidden type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                startIcon={<UploadFileIcon />}
-                disabled={!file || !key || busy || tooLarge}
-              >
-                {busy ? "Encrypting…" : "Encrypt and upload"}
-              </Button>
-            </Stack>
-          </Box>
-        </Stack>
+        {/* A column on phones, a row from the `sm` breakpoint (640px) up. */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          {/* A long file name wraps instead of overflowing the card. */}
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto min-h-9 whitespace-normal wrap-anywhere"
+            onClick={() => fileInput.current?.click()}
+            disabled={!key || busy}
+          >
+            {file ? `${file.name} (${formatBytes(file.size)})` : "Choose file"}
+          </Button>
+          <input ref={fileInput} hidden type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <Button type="submit" disabled={!file || !key || busy || tooLarge}>
+            <FileUpIcon />
+            {busy ? "Encrypting…" : "Encrypt and upload"}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );

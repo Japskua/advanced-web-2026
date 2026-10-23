@@ -1,13 +1,7 @@
+// Entry point: start the app from app.ts on PORT.
+import { app } from "./app";
 import { OIDC_ISSUER, PORT } from "./config";
-import { withLogging } from "./middleware/logger";
-import { applyMiddleware } from "./middleware/middleware";
-import { errorHandler, fallback, routes } from "./routes";
 
-const server = Bun.serve({
-  port: PORT,
-  routes: applyMiddleware(routes, withLogging),
-  fetch: withLogging(fallback),
-  error: errorHandler,
-});
+app.listen(PORT);
 
-console.log(`Profile Viewer API running at ${server.url} (identity provider: ${OIDC_ISSUER})`);
+console.log(`Profile Viewer API running at ${app.server?.url} (identity provider: ${OIDC_ISSUER})`);

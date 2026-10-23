@@ -205,8 +205,8 @@ async function listNotesHandler(req: Request): Promise<Response> {
 ```
 
 Every protected handler must remember to make this call. Week 8 replaces it
-with a `withAuth(handler)` middleware, so the check is part of the route
-definition and cannot be forgotten.
+with an Elysia macro, `{ auth: true }` on the route, so the check is part of
+the route definition and cannot be forgotten.
 
 ### Secrets in configuration
 

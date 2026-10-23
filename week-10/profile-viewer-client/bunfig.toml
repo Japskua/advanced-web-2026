@@ -1,0 +1,11 @@
+# Bun configuration for the week 10 client.
+
+[install]
+# Same supply-chain rule as the repository's bunfig.toml (Bun reads the
+# bunfig.toml of the folder you run it in): only versions public for 3 days.
+minimumReleaseAge = 259200 # seconds
+
+[serve.static]
+# Tailwind CSS for Bun's dev server (`bun ./index.html`): the plugin turns the
+# @import "tailwindcss" in src/index.css into the CSS for the classes the app uses.
+plugins = ["bun-plugin-tailwind"]

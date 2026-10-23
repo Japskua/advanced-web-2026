@@ -87,38 +87,45 @@ src/
 **Why:** identity. `requireAuth` is still a call each handler must remember,
 which motivates week 8.
 
-## Week 8 – the complete layered architecture
+## Week 8 – Elysia and the complete layered architecture
 
 ```
 shared/types.ts                   DTOs (what crosses the network)
 api/src/
-├── main.ts                       Bun.serve: routes + logging + errorHandler
-├── routes.ts                     every endpoint + its access rule (withAuth / withAdmin)
-├── handlers/                     HTTP: parse → service → response; throw on error
+├── main.ts                       app.listen(PORT)
+├── app.ts                        the Elysia app: cors, logger, errorHandler, routes
+├── routes.ts                     every endpoint, its access rule ({ auth: true }, { role: "admin" }) and schemas
+├── schemas.ts                    t.Object(...) request schemas, sanitising, the password policy
 ├── services/                     business rules; entities in, DTOs out
 ├── repositories/                 SQL; entities
-├── middleware/                   auth.ts (withAuth, withRole, withAdmin), logger, middleware
+├── plugins/                      auth.ts (the auth and role macros), logger.ts (lifecycle hooks)
 ├── types.ts                      entities (database rows), AuthUser
 ├── mappers.ts                    entity → DTO
-├── errors.ts                     AppError subclasses + the central errorHandler
-└── util/                         jwt, response, validation
+├── errors.ts                     AppError subclasses + the errorHandler plugin (onError)
+└── util/                         jwt, response
 ```
 
 **Why:** roles multiply the access rules; they must be visible in one place
-(`routes.ts`) and impossible to forget (wrappers). Errors thrown from any layer
-are turned into responses centrally, so handlers are a few lines long. DTOs and
-entities separate what the database stores from what the client may see.
+(`routes.ts`) and impossible to forget. Week 8 moves from `Bun.serve` to
+Elysia for this: a route declares `{ auth: true }` or `{ role: "admin" }` and
+its schemas, and Elysia checks them before the handler runs. Errors thrown from
+any layer become responses in one `onError` hook, so route handlers are a few
+lines long. DTOs and entities separate what the database stores from what the
+client may see.
 
 ```
-request → withLogging → withAuth/withAdmin → handler → service → repository → PostgreSQL
-                                   errors from any layer ──→ errorHandler → JSON response
+request → logger → schema validation → auth/role macro → route handler → service → repository → PostgreSQL
+                         errors from any layer ──→ onError (errorHandler) → JSON response
 ```
 
 ## Weeks 10–12 – the same shape, new concerns
 
-- **Week 10** adds an `oidc/` module (provider discovery), a `login-service`
-  for the OAuth flow and a `session-service`; cookies via `req.cookies`.
-- **Week 11** keeps `vulnerable/` and `secure/` side by side to compare them.
+- **Week 10** is an Elysia app like week 8, plus an `oidc/` module (provider
+  discovery), a `login-service` for the OAuth flow and a `session-service`;
+  cookies through Elysia's `cookie` object.
+- **Week 11** keeps `vulnerable/app.ts` and `secure/app.ts` side by side to
+  compare them: two Elysia apps, the secure one with the auth and role macros,
+  security headers and the CORS plugin.
 - **Week 12** is week 8's structure plus `services/object-storage.ts` (S3
   object storage through Bun's `S3Client`), `util/rate-limiter.ts` (from week
   11), a health route, graceful shutdown, a Dockerfile, and a `deploy/` folder
@@ -131,7 +138,7 @@ request → withLogging → withAuth/withAdmin → handler → service → repos
 | 3 | `App.tsx` with the state, `components/` for presentation |
 | 4–6 | `api.ts` (one `request<T>()` helper), `config.ts`, `components/` |
 | 7 | + `pages/`, `auth.ts`, React Router, route guard components |
-| 8 | + MUI `theme.ts`, `hooks/useAuth.ts` (an external store) |
+| 8 | + shadcn/ui `components/ui/`, Tailwind theme in `index.css`, `hooks/useAuth.ts` (an external store) |
 | 9 | + `hooks/` with custom hooks for data, debouncing, persistence |
 | 10 | + `i18n/`, a layout route that loads the session once |
 | 12 | + React contexts and providers (`auth/`, `encryption/`), `crypto.ts` |

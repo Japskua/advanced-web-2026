@@ -35,8 +35,8 @@ From the repository root, `bun run lint` checks the hooks rules (see below).
 
 ```
 week-09/book-explorer/src/
-├── main.tsx                   ThemeProvider + CssBaseline
-├── theme.ts
+├── main.tsx                   renders <App /> (no theme provider needed)
+├── index.css                  Tailwind CSS + the theme (CSS variables)
 ├── types.ts                   Book, SortOrder, SearchResult
 ├── api.ts                     searchBooks(), coverUrl(): Open Library → our types
 ├── App.tsx                    state, hook composition, handlers, derived data, layout
@@ -49,8 +49,18 @@ week-09/book-explorer/src/
     ├── ControlsBar.tsx        sort order, "only with cover" switch
     ├── BookGrid.tsx           responsive grid of cards
     ├── BookCard.tsx           one book (memoised)
-    └── FavoritesPanel.tsx     the saved favourites
+    ├── FavoritesPanel.tsx     the saved favourites
+    ├── Pager.tsx              page buttons under the results
+    └── ui/                    shadcn/ui components (copied in by `shadcn add`, yours to edit)
 ```
+
+The components come from [shadcn/ui](https://ui.shadcn.com/) and are styled
+with Tailwind CSS classes, set up exactly as in week 8 (see
+["shadcn/ui and Tailwind CSS"](../week-08/README.md#shadcnui-and-tailwind-css)
+in the week 8 notes). This week uses `Card`, `Input` + `Label`, `Select`,
+`Switch`, `Button`, `Separator`, `Alert` and `Spinner`; `Dialog` and `Badge`
+are there too, ready for the exercises. The focus here is on the hooks, not on
+the styling.
 
 ---
 
@@ -190,8 +200,18 @@ number of matches (`numFound`). Sorting is done **by the API** (`sort=new` /
 thousands of results.
 
 ```tsx
-<Pagination count={pageCount} page={page} onChange={(_e, value) => handlePageChange(value)} />
+<Pager count={pageCount} page={page} onPageChange={handlePageChange} />
 ```
+
+`Pager` is a small presentational component of our own: shadcn/ui `Button`s
+for the previous page, the page numbers and the next page, inside a `<nav>`.
+Like the other components it owns no state; `App` passes the current page and
+gets clicks back through `onPageChange`. Each button has an `aria-label`
+("Go to page 3"), and the current page is marked with `aria-current="page"`,
+so screen readers can tell where the user is. With many pages it shows the
+first and the last page, the current page with its neighbours, and "…" in
+between. (shadcn/ui's own `pagination` component is made of links, for pages
+that have a URL of their own; here the page is just state, so buttons fit.)
 
 `MAX_PAGES` caps the pager at 50 pages: deep pages are slow to compute on the
 server and nobody reads them.
@@ -257,9 +277,9 @@ of the most common React bugs, and the linter finds it.
    the lint error and a race condition (throttle the network in DevTools), then
    the abort + derived-loading version.
 5. Presentational components: `SearchBar`, `ControlsBar`, `BookCard`,
-   `BookGrid`, `FavoritesPanel`.
+   `BookGrid`, `FavoritesPanel`, `Pager`.
 6. `App.tsx`: compose the hooks, page reset in the handlers, `useMemo` for
-   derived data, `useCallback` + `memo`, `Pagination`.
+   derived data, `useCallback` + `memo`, the pager.
 7. Profile with React DevTools.
 
 ## Compared with last year's Vite + Deno version
@@ -270,7 +290,8 @@ of the most common React bugs, and the linter finds it.
   the request key instead of setting it inside the effect (required by the
   current `eslint-plugin-react-hooks`).
 - `memo` + `useCallback` added to show referential equality in practice.
-- MUI 9: layout props on `Stack` move into `sx`.
+- shadcn/ui components and Tailwind CSS instead of Material UI (as in week 8),
+  with a small `Pager` component of our own instead of MUI's `Pagination`.
 
 ## Exercises
 

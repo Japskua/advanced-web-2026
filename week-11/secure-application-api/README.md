@@ -45,4 +45,4 @@ Bun loads `.env` automatically. `.env.example` contains working values for local
 
 - `bun run db:setup` resets both demo databases; run it again after a demonstration deleted users.
 - ⚠️ Never deploy the vulnerable version.
-- Compare the versions: `git diff --no-index src/vulnerable/routes.ts src/secure/routes.ts`.
+- Compare the versions: `git diff --no-index src/vulnerable/app.ts src/secure/app.ts`.

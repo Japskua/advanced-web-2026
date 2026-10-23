@@ -1,6 +1,11 @@
 import { useState } from "react";
-import { Alert, Box, Button, Card, CardContent, Chip, Stack, TextField, Typography } from "@mui/material";
-import VpnKeyIcon from "@mui/icons-material/VpnKey";
+import { KeyRoundIcon } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useEncryptionKey } from "../encryption/useEncryptionKey";
 import { errorMessage } from "../format";
 
@@ -27,56 +32,62 @@ export function KeyManager() {
 
   return (
     <Card>
-      <CardContent>
-        <Stack spacing={2}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
-            <Typography variant="h6" component="h2">
-              Encryption key
-            </Typography>
-            <Chip
-              color={key ? "success" : "default"}
-              label={key ? `Unlocked · ${fingerprint?.slice(0, 12)}…` : "Locked"}
-              title={fingerprint ?? undefined}
-            />
-          </Box>
+      <CardHeader>
+        <CardTitle>
+          <h2 className="text-lg">Encryption key</h2>
+        </CardTitle>
+        {/* CardAction puts the badge at the right end of the header. */}
+        <CardAction>
+          <Badge
+            variant={key ? "default" : "outline"}
+            className={key ? "bg-green-600 text-white" : undefined}
+            title={fingerprint ?? undefined}
+          >
+            {key ? `Unlocked · ${fingerprint?.slice(0, 12)}…` : "Locked"}
+          </Badge>
+        </CardAction>
+      </CardHeader>
 
-          {key ? (
-            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-              <Typography color="text.secondary" sx={{ flexGrow: 1 }}>
-                The key is in this tab's memory only. Reloading the page locks the vault again.
-              </Typography>
-              <Button variant="outlined" onClick={clearKey}>
-                Lock
-              </Button>
-            </Stack>
-          ) : (
-            <>
-              <Alert severity="info">
+      <CardContent className="grid gap-4">
+        {key ? (
+          <div className="flex items-center gap-4">
+            <p className="grow text-muted-foreground">
+              The key is in this tab's memory only. Reloading the page locks the vault again.
+            </p>
+            <Button variant="outline" onClick={clearKey}>
+              Lock
+            </Button>
+          </div>
+        ) : (
+          <>
+            <Alert>
+              <AlertDescription>
                 Paste the key you saved during setup. It stays in this browser tab; the server never receives it.
-              </Alert>
-              <TextField
-                label="Encryption key (Base64)"
+              </AlertDescription>
+            </Alert>
+            <div className="grid gap-2">
+              <Label htmlFor="encryption-key">Encryption key (Base64)</Label>
+              <Textarea
+                id="encryption-key"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                multiline
-                minRows={2}
-                fullWidth
-                slotProps={{ htmlInput: { spellCheck: false, autoComplete: "off" } }}
+                spellCheck={false}
+                autoComplete="off"
               />
-              {error && <Alert severity="error">{error}</Alert>}
-              <Box>
-                <Button
-                  variant="contained"
-                  startIcon={<VpnKeyIcon />}
-                  onClick={handleLoad}
-                  disabled={!input.trim() || loading}
-                >
-                  Unlock
-                </Button>
-              </Box>
-            </>
-          )}
-        </Stack>
+            </div>
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <div>
+              <Button onClick={handleLoad} disabled={!input.trim() || loading}>
+                <KeyRoundIcon />
+                Unlock
+              </Button>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

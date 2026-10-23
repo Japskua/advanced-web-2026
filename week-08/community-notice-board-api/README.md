@@ -1,6 +1,6 @@
 # Community Notice Board API (week 8)
 
-The complete layered architecture (routes → handlers → services → repositories), DTOs vs. entities, `AppError` with a central error handler, and role-based access control (`withAuth`, `withAdmin`).
+An Elysia API with the complete layered architecture (routes → services → repositories), DTOs vs. entities, `AppError` with a central `onError` handler, input schemas, and role-based access control (the `auth` and `role` macros).
 
 **Lecture notes:** [week-08/README.md](../README.md) explains every concept in this project step by step.
 

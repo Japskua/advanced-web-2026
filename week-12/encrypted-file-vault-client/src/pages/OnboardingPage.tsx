@@ -9,10 +9,12 @@
  */
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Alert, Box, Button, Checkbox, FormControlLabel, Stack, TextField, Typography } from "@mui/material";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import KeyIcon from "@mui/icons-material/Key";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
+import { CopyIcon, KeyIcon, SaveIcon } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { registerKeyFingerprint } from "../api";
 import { useAuth } from "../auth/useAuth";
 import { AuthPageLayout } from "../components/AuthPageLayout";
@@ -83,57 +85,70 @@ export function OnboardingPage() {
       title="Set up your encryption key"
       subtitle="Files are encrypted in your browser before they are uploaded."
     >
-      <Stack spacing={3}>
-        <Alert severity="warning">
-          The server never receives this key. If you lose it, nobody can decrypt your files, not even the administrators.
+      <div className="grid gap-6">
+        {/* shadcn/ui's Alert has no warning style; amber Tailwind colours in className make one. */}
+        <Alert className="border-amber-300 bg-amber-50 text-amber-900">
+          <AlertDescription className="text-amber-900">
+            The server never receives this key. If you lose it, nobody can decrypt your files, not even the administrators.
+          </AlertDescription>
         </Alert>
 
-        <Box component="ol" sx={{ m: 0, pl: 3, color: "text.secondary" }}>
+        <ol className="list-decimal pl-6 text-muted-foreground">
           <li>Generate a key in this browser.</li>
           <li>Save it somewhere safe: a password manager is ideal.</li>
           <li>Only a fingerprint (SHA-256 hash) of the key is sent to the server, to detect a wrong key later.</li>
-        </Box>
+        </ol>
 
-        {error && <Alert severity="error">{error}</Alert>}
-        {message && <Alert severity="success">{message}</Alert>}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {message && (
+          <Alert>
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
+        )}
 
-        <Box>
-          <Button variant="contained" startIcon={<KeyIcon />} onClick={() => void handleGenerate()} disabled={busy}>
+        {/* The extra <div> keeps the button its natural width instead of stretching across the grid. */}
+        <div>
+          <Button onClick={() => void handleGenerate()} disabled={busy}>
+            <KeyIcon />
             {generated ? "Generate a different key" : "Generate encryption key"}
           </Button>
-        </Box>
+        </div>
 
         {generated && (
           <>
-            <TextField
-              label="Your encryption key"
-              value={generated.base64}
-              fullWidth
-              slotProps={{ input: { readOnly: true, sx: { fontFamily: "monospace" } } }}
-            />
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <Button variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void handleCopy()}>
+            <div className="grid gap-2">
+              <Label htmlFor="generated-key">Your encryption key</Label>
+              <Input id="generated-key" value={generated.base64} readOnly className="font-mono" />
+            </div>
+            {/* A column on phones, a row from the `sm` breakpoint (640px) up. */}
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <Button variant="outline" onClick={() => void handleCopy()}>
+                <CopyIcon />
                 Copy
               </Button>
-              <Button variant="outlined" startIcon={<SaveAltIcon />} onClick={handleDownload}>
+              <Button variant="outline" onClick={handleDownload}>
+                <SaveIcon />
                 Download as a file
               </Button>
-            </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all" }}>
-              Fingerprint: {generated.fingerprint}
-            </Typography>
-            <FormControlLabel
-              control={<Checkbox checked={saved} onChange={(e) => setSaved(e.target.checked)} />}
-              label="I have saved the key somewhere safe."
-            />
-            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button variant="contained" size="large" onClick={() => void handleContinue()} disabled={!saved || busy}>
+            </div>
+            <p className="text-sm break-all text-muted-foreground">Fingerprint: {generated.fingerprint}</p>
+            {/* Radix UI's Checkbox is a <button role="checkbox">; onCheckedChange gives true, false or "indeterminate". */}
+            <div className="flex items-center gap-2">
+              <Checkbox id="key-saved" checked={saved} onCheckedChange={(checked) => setSaved(checked === true)} />
+              <Label htmlFor="key-saved">I have saved the key somewhere safe.</Label>
+            </div>
+            <div className="flex justify-end">
+              <Button size="lg" onClick={() => void handleContinue()} disabled={!saved || busy}>
                 Continue to my vault
               </Button>
-            </Box>
+            </div>
           </>
         )}
-      </Stack>
+      </div>
     </AuthPageLayout>
   );
 }

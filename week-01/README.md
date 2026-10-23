@@ -51,8 +51,8 @@ Open a **new** terminal (so the updated `PATH` is picked up) and check:
 bun --version
 ```
 
-The course material was written and tested with Bun 1.4. Any 1.3 or newer
-release works; `bun upgrade` updates an existing installation.
+The course requires Bun 1.4.4 or newer; `bun upgrade` updates an existing
+installation.
 
 **Editor.** In VS Code, install the official
 [Bun extension](https://marketplace.visualstudio.com/items?itemName=oven.bun-vscode)
@@ -81,7 +81,7 @@ implements the **Web standard APIs** (`fetch`, `Request`, `Response`, `URL`,
 browser and in other runtimes.
 
 Bun installs packages from the normal npm registry, so the whole npm ecosystem
-(React, Material UI, `jose`, …) is available.
+(React, Tailwind CSS, `jose`, …) is available.
 
 ## 3. Creating the project
 

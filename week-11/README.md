@@ -82,11 +82,11 @@ week-11/
 │   ├── scripts/db-setup.ts          resets both databases
 │   ├── src/
 │   │   ├── main.ts                  --mode=vulnerable (8000) | --mode=secure (8001)
-│   │   ├── config.ts, db.ts, seed.ts, http.ts
+│   │   ├── config.ts, db.ts, seed.ts
 │   │   ├── vulnerable/
-│   │   │   └── routes.ts            ⚠️ every handler, every mistake, labelled A01…A07
+│   │   │   └── app.ts               ⚠️ an Elysia app: every route, every mistake, labelled A01…A07
 │   │   └── secure/
-│   │       ├── routes.ts            ✅ the same handlers, fixed and labelled
+│   │       ├── app.ts               ✅ the same routes, fixed and labelled
 │   │       ├── auth.ts              signed JWTs, user loaded from the database
 │   │       └── rate-limiter.ts      fixed-window limiter for failed logins
 │   └── tests/
@@ -101,7 +101,7 @@ Compare the two versions directly:
 
 ```bash
 cd week-11/secure-application-api
-git diff --no-index src/vulnerable/routes.ts src/secure/routes.ts
+git diff --no-index src/vulnerable/app.ts src/secure/app.ts
 ```
 
 ---
@@ -122,7 +122,10 @@ only in the client do not exist.
 
 ```ts
 // vulnerable
-if (new URL(req.url).searchParams.get("role") !== "admin") return send(…, 403);
+.get("/api/admin/audit", ({ query, status }) => {
+  if (query.role !== "admin") return status(403, { ok: false, error: "Forbidden" });
+  …
+})
 ```
 
 ```bash
@@ -135,7 +138,7 @@ the request is ignored.
 
 ```ts
 // secure
-const adminAudit = requireUser(async () => send(…), "admin");
+.get("/api/admin/audit", () => ({ ok: true, data: … }), { role: "admin" })   // the macro checks the token and the role
 ```
 
 **2. IDOR / BOLA: reading someone else's object by changing an id.**
@@ -153,7 +156,7 @@ Authorization, the #1 API risk): authentication alone says *who* you are, not
 
 ```ts
 if (!note || (note.owner_id !== user.id && user.role !== "admin")) {
-  return send({ ok: false, error: "Note not found" }, 404);   // 404, not 403: don't confirm it exists
+  return status(404, { ok: false, error: "Note not found" });   // 404, not 403: don't confirm it exists
 }
 ```
 
@@ -164,7 +167,7 @@ account without even a token:
 curl -X DELETE http://localhost:8000/api/users/33333333-3333-3333-3333-333333333333
 ```
 
-Fix: `requireUser(handler, "admin")`.
+Fix: the route option `{ role: "admin" }` (an Elysia macro, as in week 8).
 
 ## A02 – Security Misconfiguration
 
@@ -183,7 +186,7 @@ curl -X POST http://localhost:8000/api/register -H "content-type: application/js
 ```
 
 Fix: log details on the server, return `{"error":"Internal server error"}`
-(the `error` handler of `Bun.serve`, as since week 6). This is also **A10
+(the app's `onError` hook, as in week 8's error handler). This is also **A10
 Mishandling of Exceptional Conditions**: failing *safely* is part of the design.
 
 **3. Permissive CORS.** `Access-Control-Allow-Origin: *` lets any website read
@@ -348,7 +351,7 @@ bun outdated              # which dependencies have newer versions
 
 ## Exercises
 
-1. Find one more vulnerability in `vulnerable/routes.ts` that is not labelled.
+1. Find one more vulnerability in `vulnerable/app.ts` that is not labelled.
    (Hint: what happens with a malformed note id?)
 2. Add an account lockout notification: after 5 failed logins, log a warning
    with the IP and email (A09). What must the log *not* contain?

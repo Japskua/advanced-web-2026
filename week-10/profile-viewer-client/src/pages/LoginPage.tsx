@@ -1,6 +1,7 @@
-import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { LOGIN_URL } from "../api";
 import PageShell from "../components/PageShell";
 
@@ -21,26 +22,27 @@ export default function LoginPage() {
 
   return (
     <PageShell>
-      <Stack spacing={3}>
-        <Typography variant="h4" component="h1">
-          {t("appTitle")}
-        </Typography>
+      <div className="grid gap-6">
+        <h1 className="text-3xl font-semibold">{t("appTitle")}</h1>
 
-        <Box>
-          <Typography variant="h5" component="h2" gutterBottom>
-            {t("signIn.title")}
-          </Typography>
-          <Typography color="text.secondary">{t("signIn.description")}</Typography>
-        </Box>
+        <div className="grid gap-2">
+          <h2 className="text-xl font-semibold">{t("signIn.title")}</h2>
+          <p className="text-muted-foreground">{t("signIn.description")}</p>
+        </div>
 
-        {isErrorCode(errorCode) && <Alert severity="error">{t(`errors.${errorCode}`)}</Alert>}
+        {isErrorCode(errorCode) && (
+          <Alert variant="destructive">
+            <AlertDescription>{t(`errors.${errorCode}`)}</AlertDescription>
+          </Alert>
+        )}
 
         {/* A link, not a fetch: the browser leaves this app and goes to the
-            API, then to Google, then back to /profile. */}
-        <Button variant="contained" size="large" href={LOGIN_URL}>
-          {t("signIn.button")}
+            API, then to Google, then back to /profile. `asChild` renders the
+            Button as its child, a plain <a>: the button's look, a real link. */}
+        <Button size="lg" asChild>
+          <a href={LOGIN_URL}>{t("signIn.button")}</a>
         </Button>
-      </Stack>
+      </div>
     </PageShell>
   );
 }

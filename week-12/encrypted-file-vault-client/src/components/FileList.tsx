@@ -1,19 +1,9 @@
 import { useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  Stack,
-  Typography,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import DownloadIcon from "@mui/icons-material/Download";
+import { DownloadIcon, Trash2Icon } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import type { FileDto } from "@shared/types";
 import { deleteFile, downloadEncryptedFile } from "../api";
 import { decryptBytes } from "../crypto";
@@ -66,58 +56,68 @@ export function FileList({ files, loading, loadError, onDeleted }: Readonly<Prop
   let content;
   if (loading) {
     content = (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center py-8">
+        <Spinner className="size-8 text-primary" />
+      </div>
     );
   } else if (files.length === 0) {
-    content = <Typography color="text.secondary">No files yet.</Typography>;
+    content = <p className="text-muted-foreground">No files yet.</p>;
   } else {
     content = (
-      <List disablePadding>
+      // `divide-y` draws a line between the list items.
+      <ul className="divide-y">
         {files.map((file) => (
-          <ListItem key={file.id} divider sx={{ gap: 2, flexWrap: "wrap" }}>
-            <ListItemText
-              primary={file.originalFilename}
-              secondary={`${formatBytes(file.sizeBytes)} · ${new Date(file.createdAt).toLocaleString()}`}
-              sx={{ minWidth: 200 }}
-            />
-            <Stack direction="row" spacing={1}>
+          <li key={file.id} className="flex flex-wrap items-center gap-4 py-3">
+            <div className="min-w-50 grow">
+              <p className="wrap-anywhere">{file.originalFilename}</p>
+              <p className="text-sm text-muted-foreground">
+                {`${formatBytes(file.sizeBytes)} · ${new Date(file.createdAt).toLocaleString()}`}
+              </p>
+            </div>
+            <div className="flex gap-2">
               <Button
-                variant="outlined"
-                startIcon={<DownloadIcon />}
+                variant="outline"
                 onClick={() => void handleDownload(file)}
                 disabled={!key || busyId === file.id}
               >
+                <DownloadIcon />
                 Download
               </Button>
               <Button
-                variant="outlined"
-                color="error"
-                startIcon={<DeleteIcon />}
+                variant="destructive"
                 onClick={() => void handleDelete(file)}
                 disabled={busyId === file.id}
               >
+                <Trash2Icon />
                 Delete
               </Button>
-            </Stack>
-          </ListItem>
+            </div>
+          </li>
         ))}
-      </List>
+      </ul>
     );
   }
 
   return (
     <Card>
-      <CardContent>
-        <Stack spacing={2}>
-          <Typography variant="h6" component="h2">
-            Your files
-          </Typography>
-          {loadError && <Alert severity="error">{loadError}</Alert>}
-          {error && <Alert severity="error">{error}</Alert>}
-          {content}
-        </Stack>
+      <CardHeader>
+        <CardTitle>
+          <h2 className="text-lg">Your files</h2>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="grid gap-4">
+        {loadError && (
+          <Alert variant="destructive">
+            <AlertDescription>{loadError}</AlertDescription>
+          </Alert>
+        )}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {content}
       </CardContent>
     </Card>
   );

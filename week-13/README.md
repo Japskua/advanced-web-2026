@@ -12,7 +12,7 @@ need, then rename things:
 
 | You need… | Start from |
 | --------- | ---------- |
-| A REST API with a database, auth and roles, plus a React/MUI client | `week-08` |
+| A REST API with a database, auth and roles, plus a React client (shadcn/ui + Tailwind CSS) | `week-08` |
 | Sign-in with Google instead of passwords | `week-10` |
 | File uploads to object storage, deployment to a cloud server (Hetzner, DigitalOcean) | `week-12` |
 | A front-end only, against a public API | `week-09` |
@@ -49,7 +49,7 @@ Or start from scratch: `bun init` for the API (week 1), and `bun init` plus
 
 - [ ] Every input validated on the server; ids checked before they reach the database.
 - [ ] Passwords hashed with `Bun.password`; same error for unknown user and wrong password; login rate-limited.
-- [ ] Every protected route wrapped (`withAuth`, `withRole`); ownership checked on every object access.
+- [ ] Every protected route declares its access rule (`{ auth: true }`, `{ role: ... }`, as in week 8); ownership checked on every object access.
 - [ ] Secrets only in `.env` (git-ignored) and in the cloud's secret settings; `config.ts` refuses to start without them.
 - [ ] CORS limited to your client's origin; no debug endpoints; errors without internals.
 - [ ] `bun audit` clean; `bunfig.toml` with `minimumReleaseAge`.
@@ -89,4 +89,4 @@ bun build ./index.html --outdir=dist --production   # client production build
 - This repository: each week's README explains its concepts in depth.
 - [docs/project-structure.md](../docs/project-structure.md) shows how the API structure grew from week 1 to 12.
 - [Bun documentation](https://bun.sh/docs), [react.dev](https://react.dev),
-  [MUI](https://mui.com/material-ui/), [OWASP Cheat Sheets](https://cheatsheetseries.owasp.org/).
+  [shadcn/ui](https://ui.shadcn.com/docs/components), [Tailwind CSS](https://tailwindcss.com/docs), [OWASP Cheat Sheets](https://cheatsheetseries.owasp.org/).

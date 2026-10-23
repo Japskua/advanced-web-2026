@@ -6,7 +6,7 @@ Everything you need to run any week of the course on your own machine.
 
 | Tool | Needed for | Install |
 | ---- | ---------- | ------- |
-| **Bun** 1.3+ | every week | macOS/Linux/WSL: `curl -fsSL https://bun.sh/install \| bash`<br>Windows: `powershell -c "irm bun.sh/install.ps1 \| iex"`<br>Homebrew: `brew install oven-sh/bun/bun` |
+| **Bun** 1.4.4+ | every week | macOS/Linux/WSL: `curl -fsSL https://bun.sh/install \| bash`<br>Windows: `powershell -c "irm bun.sh/install.ps1 \| iex"`<br>Homebrew: `brew install oven-sh/bun/bun` |
 | **Docker Desktop** | weeks 6–12 (PostgreSQL, SeaweedFS object storage) | <https://www.docker.com/products/docker-desktop/> |
 | **Git** | cloning, submitting | <https://git-scm.com/downloads> |
 | **An SSH client** | week 12 deployment only (built into macOS, Linux and Windows 10+) | – |
@@ -14,7 +14,7 @@ Everything you need to run any week of the course on your own machine.
 Check:
 
 ```bash
-bun --version        # 1.3.0 or newer
+bun --version        # 1.4.4 or newer
 docker --version
 ```
 

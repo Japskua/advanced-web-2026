@@ -1,15 +1,19 @@
-// Validation of request input (the week 8 approach: parse or throw BadRequestError).
+/**
+ * Validation of request input: parse or throw BadRequestError.
+ *
+ * Elysia parses the body (JSON or multipart) before the handler runs and
+ * answers 400 itself when it is not valid JSON (errors.ts). The rules here
+ * stay plain functions instead of week 8's schemas: most of them depend on the
+ * value (the password policy, the IV length, the file size limit), and their
+ * messages are part of the API that the client shows.
+ */
 import type { LoginBody, OnboardingBody, RegisterBody } from "@shared/types";
 import { AES_GCM_IV_BYTES, MAX_FILE_BYTES } from "@shared/limits";
 import { BadRequestError } from "../errors";
 
-export async function readJson(req: Request): Promise<Record<string, unknown>> {
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    throw new BadRequestError("The request body must be valid JSON.");
-  }
+// The body Elysia parsed, as a record of fields (a JSON object or the fields
+// of a multipart form).
+export function asObject(body: unknown): Record<string, unknown> {
   if (typeof body !== "object" || body === null || Array.isArray(body)) {
     throw new BadRequestError("The request body must be a JSON object.");
   }
@@ -74,12 +78,12 @@ export interface UploadInput {
 }
 
 // The multipart upload: the encrypted bytes plus the metadata needed to
-// decrypt and display them later. The parameter type asks only for what the
-// function uses (a `get` method), which any FormData implementation provides.
-export function parseUploadForm(form: { get(name: string): unknown }): UploadInput {
-  const encrypted = form.get("file");
+// decrypt and display them later. Elysia has parsed the form into an object:
+// the file part is a File, the other parts are strings.
+export function parseUploadForm(form: Record<string, unknown>): UploadInput {
+  const encrypted = form.file;
   const text = (name: string) => {
-    const value = form.get(name);
+    const value = form[name];
     if (typeof value !== "string" || value === "") throw new BadRequestError(`Missing form field '${name}'.`);
     return value;
   };

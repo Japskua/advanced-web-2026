@@ -1,26 +1,21 @@
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
 import type { UserDto } from "@shared/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { deleteUser, fetchUsers } from "../api";
 import { useAuth } from "../hooks/useAuth";
 
@@ -68,80 +63,91 @@ export default function AdminUsersPage() {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center py-12">
+        <Spinner className="size-8 text-primary" />
+      </div>
     );
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Stack spacing={2}>
-        <Typography variant="h5" component="h1">
-          Users
-        </Typography>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <h1 className="text-2xl">Users</h1>
+        </CardTitle>
+      </CardHeader>
 
-        {error && <Alert severity="error">{error}</Alert>}
+      <CardContent className="grid gap-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Email</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Registered</TableCell>
-                <TableCell align="right">Actions</TableCell>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Registered</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>
+                  <Badge variant={user.role === "admin" ? "secondary" : "outline"}>{user.role}</Badge>
+                </TableCell>
+                <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setUserToDelete(user)}
+                    // The API refuses this too; disabling the button explains it earlier.
+                    disabled={user.id === myId}
+                    title={user.id === myId ? "You cannot delete your own account" : undefined}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={user.role}
-                      size="small"
-                      color={user.role === "admin" ? "secondary" : "default"}
-                    />
-                  </TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell align="right">
-                    <Button
-                      color="error"
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setUserToDelete(user)}
-                      // The API refuses this too; disabling the button explains it earlier.
-                      disabled={user.id === myId}
-                      title={user.id === myId ? "You cannot delete your own account" : undefined}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Stack>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
 
-      {/* A confirmation dialog: MUI renders it on top of the page while open. */}
-      <Dialog open={userToDelete !== null} onClose={() => !deleting && setUserToDelete(null)}>
-        <DialogTitle>Delete user?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {userToDelete?.email} and all notifications they wrote will be deleted. This cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setUserToDelete(null)} disabled={deleting}>
-            Cancel
-          </Button>
-          <Button color="error" variant="contained" onClick={confirmDelete} disabled={deleting}>
-            {deleting ? "Deleting…" : "Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Paper>
+      {/*
+        A confirmation dialog. AlertDialog is the shadcn/ui dialog for "are you
+        sure?" questions: it renders on top of the page while open, keeps the
+        keyboard focus inside, and has role="alertdialog" for screen readers.
+      */}
+      <AlertDialog open={userToDelete !== null} onOpenChange={(open) => !open && !deleting && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {userToDelete?.email} and all notifications they wrote will be deleted. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleting}
+              onClick={(e) => {
+                // An Action closes the dialog by itself; keep it open until the API has answered.
+                e.preventDefault();
+                void confirmDelete();
+              }}
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
   );
 }

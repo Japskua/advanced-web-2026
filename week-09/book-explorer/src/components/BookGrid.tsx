@@ -1,4 +1,3 @@
-import { Grid } from "@mui/material";
 import type { Book } from "../types";
 import BookCard from "./BookCard";
 
@@ -9,15 +8,20 @@ type Props = {
 };
 
 // A reusable, purely presentational component: give it books and it lays them
-// out in a responsive grid (1 column on phones … 4 on wide screens).
+// out in a responsive grid (1 column on phones … 4 on wide screens). A prefix
+// such as `xl:` applies a class from that breakpoint up: `xl:grid-cols-3` means
+// 3 columns on screens at least 1280px wide.
 export default function BookGrid({ books, favoriteKeys, onToggleFavorite }: Readonly<Props>) {
   return (
-    <Grid container spacing={2}>
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {books.map((book) => (
-        <Grid key={book.key} size={{ xs: 12, sm: 6, md: 4, xl: 3 }}>
-          <BookCard book={book} isFavorite={favoriteKeys.has(book.key)} onToggleFavorite={onToggleFavorite} />
-        </Grid>
+        <BookCard
+          key={book.key}
+          book={book}
+          isFavorite={favoriteKeys.has(book.key)}
+          onToggleFavorite={onToggleFavorite}
+        />
       ))}
-    </Grid>
+    </div>
   );
 }

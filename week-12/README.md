@@ -101,28 +101,32 @@ week-12/
 │   ├── Dockerfile, .dockerignore     the API image (bundle + Bun, non-root, HEALTHCHECK)
 │   ├── sql/schema.sql                users (key_fingerprint), files (object_key, encryption_iv)
 │   └── src/
-│       ├── main.ts                   checkStorage(), Bun.serve, SIGTERM handling
+│       ├── main.ts                   checkStorage(), app.listen (body size limit), SIGTERM handling
+│       ├── app.ts                    the Elysia app: CORS, logger, errors, routes
 │       ├── config.ts                 every setting from the environment
-│       ├── routes.ts                 the route table (+ /api/health)
-│       ├── handlers/                 auth-handlers (rate-limited login), file-handlers
+│       ├── routes.ts                 every route (+ /api/health, rate-limited login)
 │       ├── services/
 │       │   ├── auth-service.ts       invite code, hashing, onboarding
 │       │   ├── file-service.ts       fingerprint check, upload/download/delete
 │       │   └── object-storage.ts     S3 through Bun's built-in S3Client
 │       ├── repositories/             users, files (every file query includes the owner)
-│       ├── middleware/               auth (withAuth), logger, middleware
-│       ├── errors.ts, mappers.ts, types.ts
+│       ├── plugins/                  auth (the `auth: true` macro), logger
+│       ├── errors.ts                 AppError classes + the error handler plugin
+│       ├── mappers.ts, types.ts
 │       └── util/                     jwt, rate-limiter (from week 11), client-ip, response, validation
 ├── encrypted-file-vault-client/
-│   ├── bunfig.toml                   inline BUN_PUBLIC_* variables in development
+│   ├── bunfig.toml                   dev server: inline BUN_PUBLIC_* variables, Tailwind CSS plugin
+│   ├── build.ts                      `bun run build`: Bun.build() into dist/, same env rule + Tailwind
 │   ├── .env.example                  BUN_PUBLIC_API_URL
 │   └── src/
 │       ├── config.ts                 API_URL from the build
+│       ├── index.css                 Tailwind CSS + the shadcn/ui theme (set up as in week 8)
 │       ├── crypto.ts                 generateKey, importKey, fingerprintOf, encryptFile, decryptBytes
 │       ├── api.ts                    requests + the token store
 │       ├── auth/                     AuthContext, AuthProvider, useAuth
 │       ├── encryption/               EncryptionKeyContext, EncryptionKeyProvider, useEncryptionKey
 │       ├── components/               RouteGuards, KeyManager, FileUploadForm, FileList, AuthPageLayout
+│       ├── components/ui/            shadcn/ui components (copied in by `shadcn add`, yours to edit)
 │       └── pages/                    Login, Register, Onboarding, Dashboard
 └── deploy/                           the production setup
     ├── compose.yml                   Caddy + API + PostgreSQL + SeaweedFS on one server
@@ -241,9 +245,16 @@ The same code runs on a laptop and on the server; only configuration changes.
 
 The client has no server to read variables at runtime, so Bun's bundler
 replaces `process.env.BUN_PUBLIC_API_URL` with its value while building. Only
-variables with the `BUN_PUBLIC_` prefix are inlined (`--env='BUN_PUBLIC_*'`), so
+variables with the `BUN_PUBLIC_` prefix are inlined (`env: "BUN_PUBLIC_*"`), so
 a secret in the environment cannot leak into the bundle by accident.
 `config.ts` falls back to `localhost:8000` if the variable was not set.
+
+The setting is in two places. `bunfig.toml` has it for the dev server
+(`[serve.static] env = "BUN_PUBLIC_*"`), and `build.ts` for the production
+build: `bun run build` runs `build.ts`, which calls `Bun.build()` with the same
+`env` rule and the Tailwind CSS plugin (the UI is shadcn/ui and Tailwind CSS,
+set up as in week 8). The result in `dist/` is an `index.html`, one JavaScript
+file and one CSS file: plain static files that Caddy serves.
 
 The API reads every variable in `config.ts` and refuses to start if one is
 missing. In particular, `ALLOWED_ORIGIN` has no `*` default, and `JWT_SECRET`
@@ -356,8 +367,8 @@ reach of JavaScript. Switching is one of this week's exercises.
 bun run build      # bun build src/main.ts --target=bun → dist/main.js (+ source map)
 ```
 
-`bun build` bundles the application **and all its dependencies** into one
-file. The image therefore needs nothing but Bun and that file: no
+`bun build` bundles the application **and all its dependencies** (Elysia,
+its CORS plugin, jose) into one file. The image therefore needs nothing but Bun and that file: no
 `node_modules`, no install step, no lockfile in the image.
 
 ```dockerfile
@@ -698,10 +709,13 @@ containers behind a load balancer.
   open-source parts, at any provider.
 - Bun's built-in `S3Client` replaces the Azure SDK; SeaweedFS replaces the Azure
   emulator for local development and can run in production too.
+- The API is an Elysia app, as since week 8 (routes with the `auth: true` macro,
+  one error handler plugin).
 - `Bun.password`; the Docker image runs a single bundled file as a non-root user
   with a health check (last year: `denoland/deno` with seven `--allow-*` flags,
   as root).
-- `bun build --env='BUN_PUBLIC_*'` replaces Vite's `VITE_*` variables.
+- Bun's bundler with `env: "BUN_PUBLIC_*"` (the client's `build.ts`) replaces
+  Vite's `VITE_*` variables.
 - Fixed: the SPA fallback (deep links returned 404); malformed JSON → `400`; the
   fingerprint can be set once (`409`, atomically in SQL); `JWT_SECRET` and
   `ALLOWED_ORIGIN` are required; the storage is checked once at startup;

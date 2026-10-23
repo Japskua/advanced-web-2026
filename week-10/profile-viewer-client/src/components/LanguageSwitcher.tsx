@@ -1,27 +1,34 @@
-import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LANGUAGES, type Language } from "../i18n";
 
 export default function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
 
   return (
-    <FormControl size="small" sx={{ minWidth: 140 }}>
-      <InputLabel id="language-label">{t("language")}</InputLabel>
+    <div className="flex items-center gap-2">
+      {/* htmlFor/id ties the Label to the select's trigger button, so screen
+          readers announce the select as "Language". */}
+      <Label htmlFor="language">{t("language")}</Label>
       <Select
-        labelId="language-label"
-        label={t("language")}
         value={i18n.resolvedLanguage ?? "en"}
         // changeLanguage re-renders every component that uses useTranslation().
-        onChange={(e) => void i18n.changeLanguage(e.target.value)}
+        onValueChange={(language) => void i18n.changeLanguage(language)}
       >
-        {(Object.entries(LANGUAGES) as [Language, string][]).map(([code, name]) => (
-          // lang={code}: each language name is announced in its own language.
-          <MenuItem key={code} value={code} lang={code}>
-            {name}
-          </MenuItem>
-        ))}
+        <SelectTrigger id="language" className="w-36">
+          {/* Shows the text of the selected item. */}
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {(Object.entries(LANGUAGES) as [Language, string][]).map(([code, name]) => (
+            // lang={code}: each language name is announced in its own language.
+            <SelectItem key={code} value={code} lang={code}>
+              {name}
+            </SelectItem>
+          ))}
+        </SelectContent>
       </Select>
-    </FormControl>
+    </div>
   );
 }

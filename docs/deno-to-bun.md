@@ -39,7 +39,7 @@ unchanged. The differences are in tooling, built-ins and permissions.
 | `.env` files | `--env-file=.env` | loaded automatically |
 | PostgreSQL | `jsr:@db/postgres` (`pool.connect()`, `queryObject`) | built-in: `import { SQL } from "bun"`, ``sql`select … ${x}` `` |
 | Password hashing | `jsr:@felix/bcrypt` | built-in: `Bun.password.hash()` / `.verify()` (Argon2id or bcrypt) |
-| Cookies | parse the `Cookie` header by hand | `req.cookies.get()` / `.set()` / `.delete()` |
+| Cookies | parse the `Cookie` header by hand | `req.cookies.get()` / `.set()` / `.delete()` (week 10 uses Elysia's `cookie` object, which works the same way) |
 | JWT | `npm:jose` | `jose` (same library) |
 | OpenID Connect | `jsr:@panva/openid-client` | `openid-client` (same library, from npm) |
 | Object storage | `npm:@azure/storage-blob` (Azure Blob Storage) | Bun's built-in `S3Client`, against any S3-compatible service |
@@ -74,4 +74,4 @@ Consequences, discussed in week 11:
 
 Request handlers (`(req: Request) => Response`), `fetch`, `URL`,
 `URLSearchParams`, `FormData`, `crypto.randomUUID()`, Web Crypto, `jose`,
-React components, MUI, i18next and the SQL itself.
+React components, i18next and the SQL itself (the UI library changed too: shadcn/ui instead of MUI).
