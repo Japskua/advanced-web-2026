@@ -3,14 +3,11 @@
 // encrypts with Web Crypto, exactly like the client does.
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import path from "node:path";
-import type { Server } from "bun";
 import type { ApiResult, FileDto, LoginResponse, UserDto } from "@shared/types";
 import { sql } from "../src/db/client";
-import { errorHandler } from "../src/errors";
-import { fallback, routes } from "../src/routes";
+import { app } from "../src/app";
 import { checkStorage, getObject } from "../src/services/object-storage";
 
-let server: Server<undefined>;
 let baseUrl: string;
 
 const run = crypto.randomUUID().slice(0, 8);
@@ -19,12 +16,13 @@ const password = "Str0ng!Password";
 beforeAll(async () => {
   await sql.file(path.join(import.meta.dir, "..", "sql", "schema.sql"));
   await checkStorage();
-  server = Bun.serve({ port: 0, routes, fetch: fallback, error: errorHandler });
-  baseUrl = server.url.origin;
+  app.listen(0); // any free port
+  if (!app.server) throw new Error("the app did not start");
+  baseUrl = app.server.url.origin;
 });
 
 afterAll(async () => {
-  server.stop(true);
+  await app.stop(true);
   await sql`delete from users where email like 'test-%@example.com'`;
   await sql.close();
 });

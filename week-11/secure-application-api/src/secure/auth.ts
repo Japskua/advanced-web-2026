@@ -27,13 +27,13 @@ export async function signToken(userId: string): Promise<string> {
 }
 
 // The authenticated user, or null for a missing, forged or expired token.
-export async function authenticate(req: Request): Promise<AuthUser | null> {
-  const header = req.headers.get("Authorization");
-  if (!header?.startsWith("Bearer ")) return null;
+// `authorization` is the request's Authorization header.
+export async function authenticate(authorization: string | undefined): Promise<AuthUser | null> {
+  if (!authorization?.startsWith("Bearer ")) return null;
 
   let userId: string;
   try {
-    const { payload } = await jwtVerify(header.slice(7), secretKey, { algorithms: ["HS256"] });
+    const { payload } = await jwtVerify(authorization.slice(7), secretKey, { algorithms: ["HS256"] });
     if (typeof payload.sub !== "string") return null;
     userId = payload.sub;
   } catch {

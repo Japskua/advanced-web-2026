@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { vulnerableSql as sql } from "../src/db";
 import { resetDatabase, SEED_NOTES, SEED_USERS } from "../src/seed";
-import * as app from "../src/vulnerable/routes";
+import { app } from "../src/vulnerable/app";
 import { call, login, startApp, type TestApp } from "./helpers";
 
 const [admin, alice, bob] = SEED_USERS;

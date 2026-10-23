@@ -1,24 +1,17 @@
 // Shared test helpers: start one version of the app and talk to it.
-import type { Server } from "bun";
+import type { AnyElysia } from "elysia";
 
 export interface TestApp {
   url: string;
   stop: () => void;
 }
 
-export function startApp(app: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- either version's routes
-  routes: any;
-  fallback: (req: Request) => Response;
-  errorHandler: (error: Error) => Response;
-}): TestApp {
-  const server: Server<undefined> = Bun.serve({
-    port: 0,
-    routes: app.routes,
-    fetch: app.fallback,
-    error: app.errorHandler,
-  });
-  return { url: server.url.origin, stop: () => server.stop(true) };
+// Start an app on a free port. app.listen (not app.handle) so that the app has
+// its own server and can read the client's IP address (the login rate limit).
+export function startApp(app: AnyElysia): TestApp {
+  app.listen(0);
+  if (!app.server) throw new Error("the app did not start");
+  return { url: app.server.url.origin, stop: () => void app.stop(true) };
 }
 
 export interface Reply {

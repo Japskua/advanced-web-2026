@@ -188,6 +188,8 @@
       "name": "week-10-profile-viewer-api",
       "version": "1.0.0",
       "dependencies": {
+        "@elysiajs/cors": "^1.4.2",
+        "elysia": "^1.4.30",
         "openid-client": "^6.8.8",
       },
       "devDependencies": {
@@ -223,6 +225,8 @@
       "name": "week-11-secure-application-api",
       "version": "1.0.0",
       "dependencies": {
+        "@elysiajs/cors": "^1.4.2",
+        "elysia": "^1.4.30",
         "jose": "^6.2.12",
       },
       "devDependencies": {
@@ -247,6 +251,8 @@
       "name": "week-12-encrypted-file-vault-api",
       "version": "1.0.0",
       "dependencies": {
+        "@elysiajs/cors": "^1.4.2",
+        "elysia": "^1.4.30",
         "jose": "^6.2.12",
       },
       "devDependencies": {

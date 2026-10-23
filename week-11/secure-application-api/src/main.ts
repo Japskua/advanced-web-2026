@@ -9,19 +9,10 @@
 import { PORTS, readMode } from "./config";
 
 const mode = readMode();
-const port = PORTS[mode];
 
 // A dynamic import loads only the chosen version's code.
-async function start() {
-  if (mode === "secure") {
-    const app = await import("./secure/routes");
-    return Bun.serve({ port, routes: app.routes, fetch: app.fallback, error: app.errorHandler });
-  }
-  const app = await import("./vulnerable/routes");
-  return Bun.serve({ port, routes: app.routes, fetch: app.fallback, error: app.errorHandler });
-}
-
-const server = await start();
+const { app } = mode === "secure" ? await import("./secure/app") : await import("./vulnerable/app");
+app.listen(PORTS[mode]);
 
 const banner = mode === "secure" ? "✅ SECURE version" : "⚠️  VULNERABLE version (for demonstration only)";
-console.log(`${banner} running at ${server.url}`);
+console.log(`${banner} running at ${app.server?.url}`);
