@@ -231,7 +231,8 @@ export const withLogging: Middleware = (next) => async (req, server) => {
 
 Because the result is again a handler, middleware composes:
 `withAuth(withLogging(handler))`. This is the central idea of Express, Koa and
-Hono, and of week 8's authentication (`withAuth`, `withAdmin`).
+Hono. In week 8 the course moves to Elysia, whose lifecycle hooks and macros do
+the same job.
 
 `Bun.serve` has no middleware system of its own. `applyMiddleware()` walks the
 routes table and wraps every handler:

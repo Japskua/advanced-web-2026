@@ -1,10 +1,10 @@
 /**
  * Authentication and authorization, as an Elysia plugin.
  *
- * Last week this was middleware: withAuth(handler) wrapped a handler in a new
- * function. Elysia has a built-in way to do the same: a *macro*. A macro adds
- * an option to the route definition, and the option runs code before the
- * handler:
+ * Last week every protected handler called requireAuth(req) itself, and a
+ * handler that forgot it was unprotected. Elysia has a built-in way to make the
+ * check part of the route: a *macro*. A macro adds an option to the route
+ * definition, and the option runs code before the handler:
  *
  *   .get("/api/notifications", handler, { auth: true })                  any logged-in user
  *   .get("/api/admin/users", handler, { role: "admin" })                  admins only

@@ -136,7 +136,7 @@ What it replaces from the earlier weeks:
 | `routes` table for `Bun.serve`, `fallback()` for 404 | `.get()`, `.post()`, … on the app; 404 is built in |
 | `readJson()`, `asRecord()`, `typeof` checks (week 2 `validation.ts`) | a schema per route: `body: t.Object({...})`, `params: t.Object({...})` |
 | `applyMiddleware()` + `withLogging` (week 5) | lifecycle hooks: `onRequest`, `onAfterResponse` (`plugins/logger.ts`) |
-| `withAuth(handler)` wrappers (week 7) | a **macro**: `{ auth: true }` on the route (`plugins/auth.ts`) |
+| `requireAuth(req)` called in every handler (week 7) | a **macro**: `{ auth: true }` on the route (`plugins/auth.ts`) |
 | `corsHeaders()` on every response + the OPTIONS case | `.use(cors({...}))` from `@elysiajs/cors` |
 | `Bun.serve({ error: errorHandler })` | `.onError(...)` (`errors.ts`) |
 | `req.params.id` typed by `BunRequest<"/…/:id">` | `params.id` typed from the schema; `body` typed from its schema too |
@@ -284,8 +284,8 @@ export const auth = new Elysia({ name: "auth" }).macro({
   the handler's context, **typed**: in a route with `auth` or `role`, `user`
   is an `AuthUser`. In a route without them `user` does not exist, so
   TypeScript stops a handler that forgot its access rule from using it.
-- This is the same idea as week 7's `withAuth(handler)`, but declared as data
-  on the route instead of a wrapper function.
+- It replaces week 7's `requireAuth(req)` call in every handler: the rule is
+  declared as data on the route, so no handler can forget it.
 - `401` = no valid identity. `403` = valid identity, not allowed.
 - The access rules are readable in one file. Security reviews love that.
 - Order of the lifecycle: Elysia **parses and validates** the body and params

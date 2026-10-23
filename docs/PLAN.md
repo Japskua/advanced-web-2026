@@ -6,6 +6,8 @@ was analysed and re-implemented on [Bun](https://bun.sh). It is written for
 the teaching staff: it explains *what* was ported, *which* decisions were made
 and *why*, and which upstream problems were fixed along the way.
 
+> **Since 23.10.2026:** weeks 8 and 10–12 use [Elysia](https://elysiajs.com) instead of hand-written `Bun.serve` routing (macros for authentication, plugins for logging and errors). This plan describes the original port; the current structure is in each week's README and in [project-structure.md](project-structure.md).
+
 Student-facing material lives in each `week-XX/README.md`.
 
 > **Status:** all twelve weeks are implemented. All 20 projects type-check, the

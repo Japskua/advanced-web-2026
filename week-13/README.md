@@ -49,7 +49,7 @@ Or start from scratch: `bun init` for the API (week 1), and `bun init` plus
 
 - [ ] Every input validated on the server; ids checked before they reach the database.
 - [ ] Passwords hashed with `Bun.password`; same error for unknown user and wrong password; login rate-limited.
-- [ ] Every protected route wrapped (`withAuth`, `withRole`); ownership checked on every object access.
+- [ ] Every protected route declares its access rule (`{ auth: true }`, `{ role: ... }`, as in week 8); ownership checked on every object access.
 - [ ] Secrets only in `.env` (git-ignored) and in the cloud's secret settings; `config.ts` refuses to start without them.
 - [ ] CORS limited to your client's origin; no debug endpoints; errors without internals.
 - [ ] `bun audit` clean; `bunfig.toml` with `minimumReleaseAge`.

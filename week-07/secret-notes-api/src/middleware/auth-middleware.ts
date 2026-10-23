@@ -41,7 +41,8 @@ export async function signToken(user: PublicUser): Promise<string> {
  * token is missing, malformed, tampered with or expired.
  *
  * Handlers call this first and answer 401 if it returns null. Week 8 turns this
- * into a real middleware (withAuth) so handlers cannot forget the check.
+ * into an Elysia macro ({ auth: true } on the route) so handlers cannot forget
+ * the check.
  */
 export async function requireAuth(req: Request): Promise<PublicUser | null> {
   const header = req.headers.get("Authorization");
