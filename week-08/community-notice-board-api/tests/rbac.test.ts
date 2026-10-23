@@ -6,8 +6,7 @@ import path from "node:path";
 import type { Server } from "bun";
 import type { ApiResult, LoginResponse, NotificationDto, UserDto } from "@shared/types";
 import { sql } from "../src/db/client";
-import { errorHandler } from "../src/errors";
-import { fallback, routes } from "../src/routes";
+import { app } from "../src/app";
 import { registerUser } from "../src/services/auth-service";
 
 let server: Server<undefined>;
@@ -43,7 +42,7 @@ async function login(email: string): Promise<string> {
 
 beforeAll(async () => {
   await sql.file(path.join(import.meta.dir, "..", "sql", "schema.sql"));
-  server = Bun.serve({ port: 0, routes, fetch: fallback, error: errorHandler });
+  server = Bun.serve({ port: 0, fetch: (req) => app.handle(req) });
   baseUrl = server.url.origin;
 
   // An admin can only be created outside the API (like the seed script does).

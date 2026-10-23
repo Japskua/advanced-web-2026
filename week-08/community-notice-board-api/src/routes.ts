@@ -1,34 +1,54 @@
 /**
  * The route table: every endpoint of the API on one screen, with its access
- * rule. Reading this file answers "who may call what?" without opening any
- * handler.
+ * rule and the schema of its input. Reading this file answers "who may call
+ * what, with what?" without opening anything else.
  *
- *   public            anyone
- *   withAuth(...)     any logged-in user
- *   withAdmin(...)    logged-in users with the admin role
+ *   (no option)          anyone
+ *   auth: true           any logged-in user
+ *   role: "admin"        logged-in users with the admin role
+ *
+ * This file is the HTTP layer. Last week it took routes.ts plus three handler
+ * files to read and validate the input; now Elysia does that from the schemas,
+ * so each handler is one line: clean the input, call a service, respond.
  */
-import * as authHandlers from "./handlers/auth-handlers";
-import * as notificationHandlers from "./handlers/notification-handlers";
-import * as userHandlers from "./handlers/user-handlers";
-import { withAdmin, withAuth } from "./middleware/auth";
-import { fail, noContent } from "./util/response";
+import { Elysia } from "elysia";
+import { auth } from "./plugins/auth";
+import {
+  cleanCredentials,
+  cleanNotification,
+  cleanRegistration,
+  createNotificationBody,
+  credentialsBody,
+  userIdParams,
+} from "./schemas";
+import { loginUser, registerUser } from "./services/auth-service";
+import { createNotification, listNotifications } from "./services/notification-service";
+import { deleteUser, getCurrentUser, listUsers } from "./services/user-service";
+import { ok } from "./util/response";
 
-export const routes = {
+export const routes = new Elysia({ prefix: "/api" })
+  .use(auth)
+
   // public
-  "/api/auth/register": { POST: authHandlers.register },
-  "/api/auth/login": { POST: authHandlers.login },
+  .post("/auth/register", async ({ body, status }) => {
+    const { email, password } = cleanRegistration(body);
+    return status(201, ok(await registerUser(email, password)));
+  }, { body: credentialsBody })
+  .post("/auth/login", async ({ body }) => {
+    const { email, password } = cleanCredentials(body);
+    return ok(await loginUser(email, password));
+  }, { body: credentialsBody })
 
   // any authenticated user
-  "/api/auth/me": { GET: withAuth(authHandlers.me) },
-  "/api/notifications": { GET: withAuth(notificationHandlers.list) },
+  .get("/auth/me", async ({ user }) => ok(await getCurrentUser(user.id)), { auth: true })
+  .get("/notifications", async () => ok(await listNotifications()), { auth: true })
 
   // administrators only
-  "/api/admin/notifications": { POST: withAdmin(notificationHandlers.create) },
-  "/api/admin/users": { GET: withAdmin(userHandlers.list) },
-  "/api/admin/users/:id": { DELETE: withAdmin(userHandlers.remove) },
-};
-
-export function fallback(req: Request): Response {
-  if (req.method === "OPTIONS") return noContent(); // CORS preflight
-  return fail("Not found", 404);
-}
+  .post("/admin/notifications", async ({ body, user, status }) => {
+    return status(201, ok(await createNotification(user, cleanNotification(body))));
+  }, { role: "admin", body: createNotificationBody })
+  .get("/admin/users", async () => ok(await listUsers()), { role: "admin" })
+  .delete("/admin/users/:id", async ({ params, user, status }) => {
+    await deleteUser(user, params.id);
+    return status(204);
+  }, { role: "admin", params: userIdParams });

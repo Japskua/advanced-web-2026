@@ -4,15 +4,16 @@
  * Until now every handler chose status codes itself, with try/catch blocks
  * around service calls. With a layered architecture that does not scale: the
  * service knows *what* went wrong (no such user, email taken) but should not
- * know about HTTP; the handler knows HTTP but should not inspect every possible
+ * know about HTTP; the route knows HTTP but should not inspect every possible
  * failure.
  *
  * Instead, any layer throws an AppError subclass that carries its HTTP status.
- * One central error handler (in main.ts, through Bun.serve's `error` option)
- * turns it into a response. Code that is not about errors no longer needs
- * try/catch at all.
+ * One central error handler (the `errorHandler` plugin below, an Elysia
+ * `onError` hook) turns it into a response. Code that is not about errors no
+ * longer needs try/catch at all.
  */
-import { fail } from "./util/response";
+import { Elysia } from "elysia";
+import type { ApiResult } from "@shared/types";
 
 export class AppError extends Error {
   readonly status: number;
@@ -54,13 +55,43 @@ export class ConflictError extends AppError {
   }
 }
 
-// Bun.serve calls this for every error thrown by a handler.
-export function errorHandler(error: Error): Response {
-  if (error instanceof AppError) {
-    return fail(error.message, error.status);
-  }
-
-  // Anything else is a bug or an outage. Log everything, reveal nothing.
-  console.error("Unhandled error:", error);
-  return fail("Internal server error", 500);
+function fail(message: string): ApiResult<never> {
+  return { ok: false, error: { message } };
 }
+
+/**
+ * Elysia calls onError for every error: our own AppErrors, and the errors
+ * Elysia raises itself before a handler runs. `code` tells them apart:
+ *
+ *   VALIDATION  the body or a path parameter does not match its schema
+ *               (the schema's `error` option is the message, see schemas.ts)
+ *   PARSE       the body is not valid JSON
+ *   NOT_FOUND   no route matches
+ *
+ * `as: "global"` applies the hook to every route of the app that uses this
+ * plugin, not only to routes defined inside the plugin.
+ */
+export const errorHandler = new Elysia({ name: "error-handler" })
+  .error({ AppError })
+  .onError({ as: "global" }, ({ code, error, set }) => {
+    if (error instanceof AppError) {
+      set.status = error.status;
+      return fail(error.message);
+    }
+    switch (code) {
+      case "VALIDATION":
+        set.status = 400;
+        return fail(typeof error.customError === "string" ? error.customError : "Invalid request.");
+      case "PARSE":
+        set.status = 400;
+        return fail("The request body must be valid JSON.");
+      case "NOT_FOUND":
+        set.status = 404;
+        return fail("Not found");
+    }
+
+    // Anything else is a bug or an outage. Log everything, reveal nothing.
+    console.error("Unhandled error:", error);
+    set.status = 500;
+    return fail("Internal server error");
+  });

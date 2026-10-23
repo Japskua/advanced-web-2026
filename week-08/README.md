@@ -1,14 +1,24 @@
-# Week 8 – Layered architecture, RBAC and shadcn/ui
+# Week 8 – Elysia, layered architecture, RBAC and shadcn/ui
 
 The **Community Notice Board** has two kinds of users. Everyone who registers
 can read the notifications; **administrators** can also publish notifications
 and manage users. That is **role-based access control (RBAC)**.
 
 This is also the week where the back-end structure that has grown since week 4
-is completed: **routes → handlers → services → repositories → database**, with
-a clear rule for what belongs in each layer, **DTOs** separated from
-**entities**, and errors handled in one place. The front-end switches from
-hand-written CSS to **shadcn/ui** components styled with **Tailwind CSS**.
+is completed: **routes → services → repositories → database**, with a clear
+rule for what belongs in each layer, **DTOs** separated from **entities**, and
+errors handled in one place.
+
+And it is the week the API gets a **framework**. Since week 1 you have written
+by hand what every web framework does: a route table, parsing and validating
+JSON bodies (week 2), middleware that wraps handlers (week 5), CORS headers and
+preflights, a central error handler. That was the point: now you know what a
+framework does for you. From this week on the API uses **[Elysia](https://elysiajs.com)**,
+a framework made for Bun. The service and repository layers do not change at
+all; only the HTTP edge gets shorter.
+
+The front-end switches from hand-written CSS to **shadcn/ui** components styled
+with **Tailwind CSS**.
 
 ## Learning objectives
 
@@ -16,9 +26,10 @@ After this week you can:
 
 - explain the responsibility of each layer and trace a request through all of them
 - tell a DTO from an entity, and map one to the other deliberately
-- implement RBAC with composable middleware (`withAuth`, `withAdmin`) and use `401` vs `403` correctly
-- throw typed application errors and convert them to responses in one central handler
-- validate and sanitise input at the edge of the application, with messages a user can act on
+- build an API with Elysia: routes, plugins, lifecycle hooks, and what each replaces from plain `Bun.serve`
+- implement RBAC with an Elysia macro (`{ auth: true }`, `{ role: "admin" }`) and use `401` vs `403` correctly
+- throw typed application errors and convert them to responses in one central `onError` handler
+- validate input with schemas (`t.Object(...)`) and sanitise it at the edge of the application, with messages a user can act on
 - seed an initial administrator safely
 - build a React UI with shadcn/ui and Tailwind CSS: theme, layout, forms, tables, dialogs
 - subscribe React components to state that lives outside React (`useSyncExternalStore`)
@@ -71,20 +82,21 @@ week-08/
 │   │   ├── db-setup.ts
 │   │   └── seed-admin.ts              bun run seed:admin
 │   └── src/
-│       ├── main.ts                    Bun.serve: routes + logging + central error handler
-│       ├── routes.ts                  every endpoint and its access rule, on one screen
-│       ├── handlers/                  HTTP layer: auth-, notification-, user-handlers
+│       ├── main.ts                    app.listen(PORT)
+│       ├── app.ts                     the Elysia app: cors, logger, errorHandler, routes
+│       ├── routes.ts                  every endpoint, its access rule and its schemas, on one screen
+│       ├── schemas.ts                 t.Object(...) schemas + sanitising and the password policy
 │       ├── services/                  business rules: auth-, notification-, user-service
 │       ├── repositories/              SQL: user-, notification-repository
 │       ├── db/client.ts               the connection pool
-│       ├── middleware/
-│       │   ├── auth.ts                withAuth, withRole, withAdmin
-│       │   ├── logger.ts, middleware.ts
+│       ├── plugins/
+│       │   ├── auth.ts                macros { auth: true } and { role: "admin" }
+│       │   └── logger.ts              onRequest / onAfterResponse hooks
 │       ├── types.ts                   entities (UserEntity, NotificationEntity) and AuthUser
 │       ├── mappers.ts                 entity → DTO
-│       ├── errors.ts                  AppError subclasses + errorHandler
+│       ├── errors.ts                  AppError subclasses + the errorHandler plugin (onError)
 │       ├── config.ts
-│       └── util/                      jwt.ts, response.ts, validation.ts
+│       └── util/                      jwt.ts, response.ts (the ok() envelope)
 └── community-notice-board-client/src/
     ├── main.tsx                       BrowserRouter (no theme provider needed)
     ├── index.css                      Tailwind CSS + the theme (CSS variables)
@@ -101,41 +113,79 @@ week-08/
 
 ## Concepts: the back-end
 
+### From Bun.serve to Elysia
+
+Elysia is a web framework built for Bun (it runs on `Bun.serve` underneath).
+You build an app by chaining calls on one object:
+
+```ts
+import { Elysia, t } from "elysia";
+
+new Elysia()
+  .get("/api/hello", () => ({ ok: true, data: "hello" }))       // returning an object sends JSON
+  .post("/api/echo", ({ body }) => body, {
+    body: t.Object({ text: t.String() }),                          // validated before the handler runs
+  })
+  .listen(8000);
+```
+
+What it replaces from the earlier weeks:
+
+| Written by hand until week 7 | Elysia, this week |
+| ---------------------------- | ----------------- |
+| `routes` table for `Bun.serve`, `fallback()` for 404 | `.get()`, `.post()`, … on the app; 404 is built in |
+| `readJson()`, `asRecord()`, `typeof` checks (week 2 `validation.ts`) | a schema per route: `body: t.Object({...})`, `params: t.Object({...})` |
+| `applyMiddleware()` + `withLogging` (week 5) | lifecycle hooks: `onRequest`, `onAfterResponse` (`plugins/logger.ts`) |
+| `withAuth(handler)` wrappers (week 7) | a **macro**: `{ auth: true }` on the route (`plugins/auth.ts`) |
+| `corsHeaders()` on every response + the OPTIONS case | `.use(cors({...}))` from `@elysiajs/cors` |
+| `Bun.serve({ error: errorHandler })` | `.onError(...)` (`errors.ts`) |
+| `req.params.id` typed by `BunRequest<"/…/:id">` | `params.id` typed from the schema; `body` typed from its schema too |
+
+A **plugin** is just another Elysia instance that the app `.use()`s: the
+logger, the error handler, the auth macros and the routes are each a plugin,
+and `app.ts` puts them together. `app` is exported without listening, so the
+tests call it directly with `app.handle(new Request(...))`; only `main.ts`
+calls `app.listen(PORT)`.
+
 ### The layers and their responsibilities
 
 ```
             ┌───────────────────────────────────────────────────────────────────┐
-request ──▶ │ routes.ts      which handler, which access rule                    │
-            │   middleware   withLogging (all), withAuth / withAdmin (per route) │
-            │ handlers/      HTTP: parse + validate input → call service → JSON  │
+request ──▶ │ app.ts         plugins for every request: cors, logger            │
+            │ routes.ts      path, schema (validated by Elysia), access rule    │
+            │                (auth macro), one-line handler → call service      │
             │ services/      business rules; work with entities, return DTOs     │
             │ repositories/  SQL; return entities                                │
             │ db/client.ts   connection pool                                     │
             └───────────────────────────────────────────────────────────────────┘
-                     errors thrown anywhere ──▶ errors.ts errorHandler ──▶ response
+                     errors thrown anywhere ──▶ errors.ts onError ──▶ response
 ```
 
 | Layer | Knows about | Must not know about |
 | ----- | ----------- | ------------------- |
-| routes | URLs, methods, access rules | how anything is done |
-| handlers | `Request`, `Response`, status codes, validation | SQL, password hashing |
+| routes (+ schemas) | URLs, methods, access rules, input shapes, status codes | SQL, password hashing |
 | services | business rules, entities, DTOs | HTTP, SQL |
 | repositories | SQL, tables, entities | HTTP, business rules |
 
+Until week 7 there was a separate *handler* layer that parsed and validated
+the request. With Elysia the schemas do that, so each handler shrinks to one
+line and lives next to its route in `routes.ts`.
+
 Follow one request through the code: `DELETE /api/admin/users/:id`
 
-1. `routes.ts`: `withAdmin(userHandlers.remove)`.
-2. `withAdmin` → `withAuth` verifies the token, loads the user, checks the role.
-3. `userHandlers.remove` validates the id (`parseUuid`) and calls the service.
-4. `userService.deleteUser` applies the rule "admins cannot delete
-   themselves", then calls the repository.
+1. `routes.ts`: `.delete("/admin/users/:id", handler, { role: "admin", params: userIdParams })`.
+2. Elysia checks `:id` against the schema (`format: "uuid"`), else `400 Invalid user id.`
+3. The `role` macro (`plugins/auth.ts`) verifies the token, loads the user,
+   checks the role, and hands the handler a typed `user`.
+4. The handler calls `userService.deleteUser`, which applies the rule "admins
+   cannot delete themselves", then calls the repository.
 5. `userRepository.deleteUserById` runs the SQL. The database deletes the
    user's notifications too (`on delete cascade`).
-6. Back in the handler: `204 No Content`. If any step threw, the
-   `errorHandler` produced the response instead.
+6. Back in the handler: `status(204)`. If any step threw, `onError` produced
+   the response instead.
 
 Why bother? Each piece can be read, tested and changed on its own. A new
-client (a mobile app) reuses everything below the handlers. Moving from
+client (a mobile app) reuses everything below the routes. Moving from
 PostgreSQL to something else touches the repositories only. The rule "admins
 cannot delete themselves" exists in exactly one place.
 
@@ -180,67 +230,113 @@ Any layer throws:
 if (!deleted) throw new NotFoundError("User not found");
 ```
 
-and one function turns errors into responses:
+and one hook turns errors into responses (`errors.ts`):
 
 ```ts
-export function errorHandler(error: Error): Response {
-  if (error instanceof AppError) return fail(error.message, error.status);
-  console.error("Unhandled error:", error);
-  return fail("Internal server error", 500);
-}
-
-Bun.serve({ routes, fetch: fallback, error: errorHandler });
+export const errorHandler = new Elysia({ name: "error-handler" })
+  .error({ AppError })
+  .onError({ as: "global" }, ({ code, error, set }) => {
+    if (error instanceof AppError) { set.status = error.status; return fail(error.message); }
+    switch (code) {
+      case "VALIDATION": set.status = 400; return fail(error.customError);  // a schema did not match
+      case "PARSE":      set.status = 400; return fail("The request body must be valid JSON.");
+      case "NOT_FOUND":  set.status = 404; return fail("Not found");
+    }
+    console.error("Unhandled error:", error);   // a bug or an outage: log everything, reveal nothing
+    set.status = 500; return fail("Internal server error");
+  });
 ```
 
-Compare the handlers with week 7's: no `try/catch`, no status-code
-decisions. Week 7's `register` was 15 lines; now it is two.
+Elysia raises its own errors too (`code` tells them apart), so the same
+envelope `{ ok: false, error: { message } }` comes back whether a schema
+failed or a service threw. `as: "global"` makes the hook apply to every route
+of the app that uses the plugin. Compare the routes with week 7's handlers: no
+`try/catch`, no status-code decisions. Week 7's `register` was 15 lines; now
+it is two.
 
-### RBAC with composable middleware
+### RBAC with a macro
 
 ```ts
-export const routes = {
-  "/api/auth/login":          { POST: authHandlers.login },                        // public
-  "/api/notifications":       { GET: withAuth(notificationHandlers.list) },        // any user
-  "/api/admin/notifications": { POST: withAdmin(notificationHandlers.create) },    // admins
-  "/api/admin/users/:id":     { DELETE: withAdmin(userHandlers.remove) },
-};
+export const routes = new Elysia({ prefix: "/api" })
+  .use(auth)
+  .post("/auth/login", ({ body }) => …, { body: credentialsBody })               // public
+  .get("/notifications", async () => ok(await listNotifications()), { auth: true })  // any user
+  .post("/admin/notifications", ({ body, user }) => …, { role: "admin", body: createNotificationBody })
+  .delete("/admin/users/:id", ({ params, user }) => …, { role: "admin", params: userIdParams });
 ```
 
-- `withAuth(handler)` returns a handler that checks the token first and passes
-  the authenticated user to the wrapped handler as a second argument. A
-  protected handler *cannot* run without a user.
-- `withRole(role, handler)` builds on `withAuth` and adds the role check;
-  `withAdmin` is shorthand. Middleware composes: each one is a function from
-  handler to handler.
+A macro adds an option to the route definition (`plugins/auth.ts`):
+
+```ts
+export const auth = new Elysia({ name: "auth" }).macro({
+  auth: { async resolve({ headers }) { return { user: await authenticate(headers.authorization) }; } },
+  role: (role: Role) => ({
+    async resolve({ headers }) {
+      const user = await authenticate(headers.authorization);
+      if (user.role !== role) throw new ForbiddenError(`This requires the ${role} role`);
+      return { user };
+    },
+  }),
+});
+```
+
+- `resolve` runs before the handler. What it returns (`{ user }`) is added to
+  the handler's context, **typed**: in a route with `auth` or `role`, `user`
+  is an `AuthUser`. In a route without them `user` does not exist, so
+  TypeScript stops a handler that forgot its access rule from using it.
+- This is the same idea as week 7's `withAuth(handler)`, but declared as data
+  on the route instead of a wrapper function.
 - `401` = no valid identity. `403` = valid identity, not allowed.
 - The access rules are readable in one file. Security reviews love that.
+- Order of the lifecycle: Elysia **parses and validates** the body and params
+  *before* `resolve` runs. A request with no token *and* a malformed id gets
+  `400`, not `401`. (Is that a problem? Discuss.)
 
 **Fresh user data on every request.** The token says who the user was when
-they logged in. `withAuth` looks the user up again, so a deleted user (or a
-demoted admin) loses access **immediately**, not when the token expires an hour
-later. The price is one indexed query per request. A test covers it: delete a
-user, and their still-valid token gets `401 Account no longer exists`.
+they logged in. `authenticate()` looks the user up again, so a deleted user (or
+a demoted admin) loses access **immediately**, not when the token expires an
+hour later. The price is one indexed query per request. A test covers it:
+delete a user, and their still-valid token gets `401 Account no longer exists`.
 
 **Where the role comes from.** Registration through the API always creates a
-`user`; a `role` field in the body is ignored. The first admin is created from
-the command line (`bun run seed:admin`), by someone who can read the server's
-`.env`. The database enforces the possible values with
-`check (role in ('user', 'admin'))`.
+`user`; a `role` field in the body is ignored (Elysia drops properties the
+schema does not list). The first admin is created from the command line
+(`bun run seed:admin`), by someone who can read the server's `.env`. The
+database enforces the possible values with `check (role in ('user', 'admin'))`.
 
 ### Validation and sanitisation
 
-`util/validation.ts` turns `unknown` input into typed, clean values, or throws a
-`BadRequestError`:
+`schemas.ts` declares the **shape** of each input, and Elysia checks it before
+the handler runs:
 
-- **sanitise**: trim titles and contents, lower-case emails;
-- **validate**: required fields, types, maximum lengths, UUID format, password
-  policy;
-- **explain**: the password message lists exactly what is missing ("an
-  uppercase letter, a number").
+```ts
+const REQUIRED = "Email and password are required.";
+export const credentialsBody = t.Object(
+  { email: t.String({ error: REQUIRED }), password: t.String({ minLength: 1, error: REQUIRED }) },
+  { error: REQUIRED },
+);
+export const userIdParams = t.Object({ id: t.String({ format: "uuid", error: "Invalid user id." }) });
+```
+
+The `error` option is the message the client sees. Put it on the object
+**and** on each field, so every way the input can be wrong (missing field,
+wrong type, not an object at all) gets the same message.
+
+What a schema cannot express stays code, in the same file:
+
+- **sanitise**: trim titles and contents, lower-case emails (`cleanCredentials`, `cleanNotification`);
+- **validate** rules whose message depends on the value: the email format and
+  the password policy, which lists exactly what is missing ("an uppercase
+  letter, a number") (`cleanRegistration`).
 
 The password policy applies to **registration only**. Applying it at login
 would tell attackers the policy and lock out users whose passwords predate it.
 (Last year's version did that.)
+
+> **Gotcha.** For a field with a fixed set of values use
+> `t.Union([t.Literal("user"), t.Literal("admin")])`. `t.UnionEnum([...])` looks
+> the same but quietly fills in its first value when the field is missing, so
+> `{}` would pass as `{ role: "user" }`.
 
 ## Concepts: the front-end
 
@@ -343,7 +439,7 @@ No page needs its own 401 code.
 `decodeClaims()` reads the role from the token so the UI can show admin links
 and guard admin pages (`AdminRoute`). The client cannot verify the signature,
 and a user can edit their own token, so this is presentation only. Security is
-the API's `withAdmin`, which answers `403` regardless of what the browser shows.
+the API's `role` macro, which answers `403` regardless of what the browser shows.
 
 ## Lecture walkthrough
 
@@ -352,11 +448,14 @@ the API's `withAdmin`, which answers `403` regardless of what the browser shows.
 1. Schema: roles with a check constraint, the foreign key with cascade.
 2. `types.ts` (entities) vs `shared/types.ts` (DTOs); `mappers.ts`.
 3. Repositories, including the `join` and the reusable column fragment.
-4. `errors.ts`: the `AppError` family and `errorHandler`.
-5. `validation.ts`: parsers that throw `BadRequestError`.
-6. Services: rules such as "no self-deletion".
-7. `util/jwt.ts`, then `middleware/auth.ts`: `withAuth`, `withRole`, `withAdmin`.
-8. Handlers and `routes.ts`. Point out how short the handlers are.
+4. `errors.ts`: the `AppError` family and the `errorHandler` plugin (`onError`).
+5. Services: rules such as "no self-deletion".
+6. Elysia: `bun add elysia @elysiajs/cors`; a hello-world app; compare with
+   week 7's `Bun.serve` routes table. `app.ts` with `cors()` and `plugins/logger.ts`.
+7. `schemas.ts`: `t.Object` schemas with `error` messages, plus the sanitising
+   functions. Show a validation failure with curl.
+8. `util/jwt.ts`, then `plugins/auth.ts`: the `auth` and `role` macros and the
+   typed `user`. Then `routes.ts`: point out how short the handlers are.
 9. `seed-admin.ts`. Then try the endpoints:
 
    ```bash
@@ -382,11 +481,13 @@ the API's `withAdmin`, which answers `403` regardless of what the browser shows.
 
 ## Compared with last year's Deno version
 
-- Routes use Bun's route table with typed parameters; the special case for
-  `DELETE /api/admin/users/:id` outside the route map is gone.
+- The API uses Elysia (weeks 1–7 use plain `Bun.serve`): schemas instead of
+  hand-written validation, macros instead of middleware wrappers, plugins for
+  CORS and logging; the special case for `DELETE /api/admin/users/:id` outside
+  the route map is gone.
 - `Bun.password` replaces bcrypt; no permission flags.
 - New: `AppError` classes with a central handler; entity/DTO split with
-  mappers; `GET /api/auth/me`; fresh user lookup in `withAuth`; validation
+  mappers; `GET /api/auth/me`; fresh user lookup on every request; validation
   messages listing the password rules; user list with a confirmation dialog;
   shadcn/ui and Tailwind CSS instead of Material UI.
 - Fixed: no `"dev-secret"` fallback for `JWT_SECRET`; login no longer applies
@@ -400,13 +501,14 @@ the API's `withAdmin`, which answers `403` regardless of what the browser shows.
 2. Add `DELETE /api/admin/notifications/:id` (admins) and a delete button on
    each notification card that only admins see.
 3. Add a third role, `moderator`, who can publish notifications but not manage
-   users. What changes in `withRole`? Would a list of allowed roles be better?
+   users. What changes in the `role` macro? Would a list of allowed roles be better?
 4. Write unit tests for `passwordPolicyViolations()` and for the mappers. Why
-   are these easier to test than handlers?
+   are these easier to test than routes?
 
 ## Further reading
 
-- [Bun: Error handling in Bun.serve](https://bun.sh/docs/runtime/http/error-handling)
+- [Elysia: Key concepts](https://elysiajs.com/key-concept.html)
+- [Elysia: Validation](https://elysiajs.com/essential/validation.html), [Lifecycle](https://elysiajs.com/essential/life-cycle.html), [Macro](https://elysiajs.com/patterns/macro.html)
 - [Martin Fowler: Presentation Domain Data Layering](https://martinfowler.com/bliki/PresentationDomainDataLayering.html)
 - [Martin Fowler: Data Transfer Object](https://martinfowler.com/eaaCatalog/dataTransferObject.html)
 - [OWASP: Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
