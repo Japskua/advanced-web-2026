@@ -22,7 +22,7 @@ explains what changed and why.
 | [5](week-05/README.md) | File system & uploads | Image Gallery | `multipart/form-data`, `Bun.file`/`Bun.write`, magic-byte checks, middleware |
 | [6](week-06/README.md) | SQL database | Image Gallery v2 | Bun's built-in PostgreSQL client, parameterised queries, repositories, `.env` |
 | [7](week-07/README.md) | Authentication | Secret Notes | `Bun.password` (Argon2id), JWT, React Router, protected routes |
-| [8](week-08/README.md) | Layered architecture | Community Notice Board | Routes → handlers → services → repositories, DTO vs entity, RBAC, `AppError`, shadcn/ui + Tailwind CSS |
+| [8](week-08/README.md) | Elysia & layered architecture | Community Notice Board | Elysia (plugins, schema validation), routes → services → repositories, DTO vs entity, RBAC with a macro, `AppError` + `onError`, shadcn/ui + Tailwind CSS |
 | [9](week-09/README.md) | Advanced React | Book Explorer | Custom hooks, debouncing, race conditions, pagination, `memo`/`useCallback` |
 | [10](week-10/README.md) | OAuth 2.0 / OIDC | Profile Viewer | Google sign-in with PKCE, `HttpOnly` sessions, i18n (en/fi), a mock identity provider |
 | [11](week-11/README.md) | Secure applications | Security demo | OWASP Top 10:2025, vulnerable vs. secure side by side, rate limiting, supply-chain security |
@@ -35,9 +35,16 @@ examples, a comparison with last year's Deno version, exercises and further
 reading. Every project folder also has a short README of its own: how to run
 it, its scripts and its configuration.
 
+## Exercises and grading
+
+The weekly graded exercises are published on Moodle and submitted to
+CodeGrade. This repository contains the lecture code only: no exercise
+solutions and no grading tests. The "Exercises" section at the end of each
+week's README is ungraded practice.
+
 ## Quick start
 
-You need [Bun](https://bun.sh) 1.3 or newer and, from week 6 on,
+You need [Bun](https://bun.sh) 1.4.4 or newer and, from week 6 on,
 [Docker](https://www.docker.com/products/docker-desktop/). Details and
 troubleshooting: [docs/setup.md](docs/setup.md).
 
@@ -102,6 +109,6 @@ and one lockfile for everything.
 
 ## Versions
 
-Written and tested with Bun 1.4, TypeScript 6.0, React 19.3, React Router 8,
-shadcn/ui with Tailwind CSS 4, PostgreSQL 18. TypeScript stays on 6.0 because
-`typescript-eslint` does not support TypeScript 7 yet.
+Written and tested with Bun 1.4.4, Elysia 1.4, TypeScript 6.0, React 19.3,
+React Router 8, shadcn/ui with Tailwind CSS 4, PostgreSQL 18. TypeScript stays
+on 6.0 because `typescript-eslint` does not support TypeScript 7 yet.
