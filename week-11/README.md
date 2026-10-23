@@ -46,10 +46,10 @@ Introduce all ten briefly first; <https://owasp.org/Top10/> has a page per item.
 ```bash
 # repository root, once
 docker compose up -d
+bun run setup:env             # creates each project's .env with a random JWT_SECRET
 
 # terminal 1 – both APIs
 cd week-11/secure-application-api
-cp .env.example .env
 bun run db:setup              # resets BOTH databases to the demo data (run again after each demo)
 bun run dev:vulnerable        # http://localhost:8000
 # terminal 2
@@ -62,6 +62,12 @@ bun run cors-test             # http://localhost:5500 (a "malicious" page on ano
 
 bun test                      # in the API folder: 27 tests (12 attacks succeed, 15 checks that they fail)
 ```
+
+Both versions refuse to start while `JWT_SECRET` in `.env` is still the placeholder from `.env.example`:
+`src/config.ts` checks it at startup, whichever mode you run. `bun run setup:env` writes a random secret, but it
+never changes an existing `.env`. If you already copied `.env.example` by hand, replace the `JWT_SECRET=` line
+yourself, for example with the output of
+`bun -e 'console.log(crypto.getRandomValues(new Uint8Array(32)).toBase64())'`.
 
 Seeded data (identical in both databases, except how passwords are stored):
 
