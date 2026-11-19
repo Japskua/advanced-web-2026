@@ -1,6 +1,6 @@
 # Image Gallery client (week 5)
 
-Upload form (`FormData`) and a gallery grid. Validates files with the same rules as the API (`shared/upload-rules.ts`).
+Upload form (`FormData`) and a gallery grid. Validates files with the same rules as the API (`shared/upload-rules.ts`). Keeps a WebSocket to the API open (`hooks/useGallerySocket.ts`) and shows a Live indicator.
 
 **Lecture notes:** [week-05/README.md](../README.md) explains every concept in this project step by step.
 

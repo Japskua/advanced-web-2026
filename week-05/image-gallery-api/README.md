@@ -1,6 +1,6 @@
 # Image Gallery API (week 5)
 
-Multipart image uploads stored on disk (`uploads/`) with metadata in a JSON file (`data/uploads.json`). Checks size, type and magic bytes; logs every request through middleware.
+Multipart image uploads stored on disk (`uploads/`) with metadata in a JSON file (`data/uploads.json`). Checks size, type and magic bytes; logs every request through middleware. Caches images with ETag/304 and pushes live updates over a WebSocket at `/ws`.
 
 **Lecture notes:** [week-05/README.md](../README.md) explains every concept in this project step by step.
 
@@ -22,7 +22,7 @@ This is one half of a full-stack app; start the other half too: [`image-gallery-
 | `bun run dev` | Start the API, restarting on every save |
 | `bun run start` | Start the API without watching |
 | `bun run typecheck` | Type-check with `tsc` (Bun runs TypeScript but never checks it) |
-| `bun run test` | Run the tests (`bun test`) – 12 tests |
+| `bun run test` | Run the tests (`bun test`) – 18 tests |
 
 ## Notes
 

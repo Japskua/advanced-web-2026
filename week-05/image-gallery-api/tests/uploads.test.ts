@@ -17,6 +17,7 @@ process.env.DATA_DIR = path.join(tmp, "data");
 const { routes, fallback } = await import("../src/router");
 const { ensureStorage } = await import("../src/services/upload-service");
 const { applyMiddleware } = await import("../src/middleware/middleware");
+const { websocket } = await import("../src/realtime");
 
 // A real 1×1 pixel PNG.
 const PNG_BYTES = Uint8Array.fromBase64(
@@ -28,7 +29,7 @@ let baseUrl: string;
 
 beforeAll(async () => {
   await ensureStorage();
-  server = Bun.serve({ port: 0, routes, fetch: fallback });
+  server = Bun.serve({ port: 0, routes, fetch: fallback, websocket });
   baseUrl = server.url.origin;
 });
 
@@ -133,6 +134,77 @@ describe("serving files", () => {
   });
 });
 
+describe("HTTP caching", () => {
+  let url: string;
+
+  beforeAll(async () => {
+    const payload = await read<UploadRecord>(await upload(new File([PNG_BYTES], "cached.png", { type: "image/png" })));
+    if (!payload.ok) throw new Error(payload.error.message);
+    url = `${baseUrl}${payload.data.url}`;
+  });
+
+  test("an image has an ETag and may be cached for a year", async () => {
+    const res = await fetch(url);
+    expect(res.headers.get("etag")).toMatch(/^"[0-9a-f]+-[0-9a-f]+"$/);
+    expect(res.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+  });
+
+  test("If-None-Match with the current ETag is 304 Not Modified, without a body", async () => {
+    const etag = (await fetch(url)).headers.get("etag")!;
+    const res = await fetch(url, { headers: { "If-None-Match": etag } });
+    expect(res.status).toBe(304);
+    expect(res.headers.get("etag")).toBe(etag);
+    expect(await res.text()).toBe("");
+  });
+
+  test("a different ETag gets the whole file again", async () => {
+    const res = await fetch(url, { headers: { "If-None-Match": '"something-else"' } });
+    expect(res.status).toBe(200);
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(PNG_BYTES);
+  });
+
+  test("Bun answers Range requests for a Bun.file with 206 Partial Content", async () => {
+    const res = await fetch(url, { headers: { Range: "bytes=0-7" } });
+    expect(res.status).toBe(206);
+    expect(res.headers.get("content-range")).toBe(`bytes 0-7/${PNG_BYTES.length}`);
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(PNG_BYTES.subarray(0, 8));
+  });
+});
+
+describe("WebSocket", () => {
+  // Opens a WebSocket to /ws and collects every message it receives.
+  async function connect(): Promise<{ socket: WebSocket; messages: unknown[] }> {
+    const socket = new WebSocket(`${baseUrl.replace(/^http/, "ws")}/ws`);
+    const messages: unknown[] = [];
+    socket.addEventListener("message", (event) => messages.push(JSON.parse(String(event.data))));
+    await new Promise((resolve, reject) => {
+      socket.addEventListener("open", resolve);
+      socket.addEventListener("error", reject);
+    });
+    return { socket, messages };
+  }
+
+  test("every tab hears how many tabs are connected", async () => {
+    const a = await connect();
+    await Bun.sleep(50);
+    expect(a.messages.at(-1)).toEqual({ type: "viewers", count: 1 });
+
+    const b = await connect();
+    await Bun.sleep(50);
+    expect(a.messages.at(-1)).toEqual({ type: "viewers", count: 2 });
+    expect(b.messages.at(-1)).toEqual({ type: "viewers", count: 2 });
+
+    b.socket.close();
+    await Bun.sleep(50);
+    expect(a.messages.at(-1)).toEqual({ type: "viewers", count: 1 });
+    a.socket.close();
+  });
+
+  test("a plain GET /ws (no upgrade) is 426 Upgrade Required", async () => {
+    expect((await fetch(`${baseUrl}/ws`)).status).toBe(426);
+  });
+});
+
 describe("logging middleware", () => {
   test("applyMiddleware wraps every handler in the routes table", async () => {
     const calls: string[] = [];
@@ -141,7 +213,7 @@ describe("logging middleware", () => {
       return next(req, srv);
     });
 
-    const s = Bun.serve({ port: 0, routes: wrapped, fetch: fallback });
+    const s = Bun.serve({ port: 0, routes: wrapped, fetch: fallback, websocket });
     await fetch(`${s.url.origin}/api/uploads`);
     s.stop(true);
 
