@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat · polling</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+      #messages { list-style: none; margin: 0; padding: 0.5rem; height: 20rem; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; }
+      #messages li { padding: 0.15rem 0; }
+      form { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+      #text { flex: 1; }
+      .muted { color: #666; font-size: 0.9em; }
+    </style>
+  </head>
+  <body>
+    <h1>Chat <small class="muted">without WebSockets (polling every 2 s)</small></h1>
+    <p class="muted" id="status">Starting…</p>
+    <ul id="messages"></ul>
+    <form id="form">
+      <input id="name" placeholder="Name" maxlength="20" required />
+      <input id="text" placeholder="Message" maxlength="200" autocomplete="off" required />
+      <button>Send</button>
+    </form>
+
+    <script type="module">
+      const list = document.querySelector("#messages");
+      const status = document.querySelector("#status");
+      const form = document.querySelector("#form");
+      const nameInput = document.querySelector("#name");
+      const textInput = document.querySelector("#text");
+
+      function show(message) {
+        const li = document.createElement("li");
+        const time = new Date(message.sentAt).toLocaleTimeString();
+        // textContent, never innerHTML: the text comes from other users.
+        li.textContent = `${time}  ${message.name}: ${message.text}`;
+        list.append(li);
+        list.scrollTop = list.scrollHeight;
+      }
+
+      // ---- Receiving: ask the server every 2 seconds --------------------------
+      let lastId = 0;
+      let requests = 0;
+      let emptyAnswers = 0;
+
+      async function poll() {
+        try {
+          const res = await fetch(`/api/messages?after=${lastId}`);
+          const messages = await res.json();
+          requests++;
+          if (messages.length === 0) emptyAnswers++;
+          for (const message of messages) {
+            show(message);
+            lastId = message.id;
+          }
+          status.textContent = `Requests so far: ${requests}. Answered "nothing new": ${emptyAnswers}.`;
+        } catch {
+          status.textContent = "The server is not answering.";
+        }
+      }
+
+      poll();
+      setInterval(poll, 2000);
+
+      // ---- Sending: an ordinary POST --------------------------------------------
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await fetch("/api/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: nameInput.value, text: textInput.value }),
+        });
+        textInput.value = "";
+        // Even your own message appears only on the next poll, up to 2 s later.
+      });
+    </script>
+  </body>
+</html>

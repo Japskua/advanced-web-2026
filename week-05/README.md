@@ -59,6 +59,11 @@ cd week-05/image-gallery-client
 bun run dev            # http://localhost:5173
 ```
 
+**Class demos.** [`demos/`](demos/README.md) has three tiny stand-alone servers
+(one or two files each) that show this week's two new ideas in isolation: a
+chat that polls next to the same chat with a WebSocket, and the same JSON
+served with and without an ETag. The README there says what to show.
+
 ## Project structure
 
 ```
@@ -67,6 +72,10 @@ week-05/
 │   ├── types.ts                    UploadRecord, ApiResult<T>
 │   ├── socket-messages.ts          ServerMessage: what the API pushes over the WebSocket
 │   └── upload-rules.ts             MAX_UPLOAD_BYTES, ALLOWED_IMAGE_TYPES (values, used by both sides)
+├── demos/                          stand-alone class demos, see demos/README.md
+│   ├── chat-polling/               a chat without WebSockets: every browser asks every 2 s (port 3001)
+│   ├── chat-websocket/             the same chat with a WebSocket: the server pushes (port 3002)
+│   └── etag/                       the same JSON without and with an ETag (port 3003)
 ├── image-gallery-api/src/
 │   ├── main.ts                     ensureStorage(), Bun.serve with middleware, a body size limit and websocket
 │   ├── config.ts                   PORT, UPLOADS_DIR, DATA_DIR, MAX_REQUEST_BYTES
@@ -473,12 +482,17 @@ export function useGallerySocket(onMessage: (message: ServerMessage) => void): S
    browser. Look inside `uploads/` and `data/uploads.json`.
 6. `middleware/`: write `withLogging` for one handler first, then
    `applyMiddleware` for the whole table. Watch the log while using the app.
-7. Caching: add `Cache-Control` and the ETag to the image route, then
-   `etagMatches()`. Show `200`, then `304` with curl and in the Network tab
-   (reload). Show that `Range` gives `206` without any code of ours.
-8. `realtime.ts` and the `/ws` route; add `websocket` to `Bun.serve`. Connect
-   from the DevTools console in two tabs and watch the viewer count. Show why
-   `withLogging` needs the `undefined` check.
+7. Caching: start with the ETag demo (`demos/etag`): the same JSON without
+   and with an ETag in the Network tab. Then add `Cache-Control` and the ETag
+   to the image route, then `etagMatches()`. Show `200`, then `304` with curl
+   and in the Network tab (reload). Show that `Range` gives `206` without any
+   code of ours.
+8. Run the two chat demos (`demos/chat-polling`, `demos/chat-websocket`) side
+   by side: the polling terminal fills up with empty answers, the WebSocket one
+   stays quiet until somebody writes. Then `realtime.ts` and the `/ws` route;
+   add `websocket` to `Bun.serve`. Connect from the DevTools console in two
+   tabs and watch the viewer count. Show why `withLogging` needs the
+   `undefined` check.
 
 **Front-end**
 

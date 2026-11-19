@@ -63,6 +63,14 @@
         "typescript": "~6.0.3",
       },
     },
+    "week-05/demos": {
+      "name": "week-05-demos",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@types/bun": "^1.4.2",
+        "typescript": "~6.0.3",
+      },
+    },
     "week-05/image-gallery-api": {
       "name": "week-05-image-gallery-api",
       "version": "1.0.0",
@@ -812,6 +820,8 @@
     "week-04-joke-dashboard-api": ["week-04-joke-dashboard-api@workspace:week-04/joke-dashboard-api"],
 
     "week-04-joke-dashboard-client": ["week-04-joke-dashboard-client@workspace:week-04/joke-dashboard-client"],
+
+    "week-05-demos": ["week-05-demos@workspace:week-05/demos"],
 
     "week-05-image-gallery-api": ["week-05-image-gallery-api@workspace:week-05/image-gallery-api"],
 
