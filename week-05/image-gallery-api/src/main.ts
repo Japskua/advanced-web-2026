@@ -1,6 +1,7 @@
 import { MAX_REQUEST_BYTES, PORT } from "./config";
 import { withLogging } from "./middleware/logger";
 import { applyMiddleware } from "./middleware/middleware";
+import { websocket } from "./realtime";
 import { fallback, routes } from "./router";
 import { ensureStorage } from "./services/upload-service";
 
@@ -15,6 +16,8 @@ const server = Bun.serve({
   // Every route handler and the fallback are wrapped with the logger.
   routes: applyMiddleware(routes, withLogging),
   fetch: withLogging(fallback),
+  // What happens on every WebSocket connection (opened by GET /ws).
+  websocket,
 });
 
 console.log(`Image Gallery API running at ${server.url}`);

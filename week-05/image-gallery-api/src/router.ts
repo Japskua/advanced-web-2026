@@ -1,5 +1,6 @@
-import type { BunRequest } from "bun";
+import type { BunRequest, Server } from "bun";
 import { listUploads, resolveUploadPath, saveUploadedImage, UploadError } from "./services/upload-service";
+import { etagMatches, notModified } from "./util/http-cache";
 import { corsHeaders, fail, ok } from "./util/response";
 
 // GET /api/uploads – metadata of every image, newest first.
@@ -43,17 +44,35 @@ async function serveUploadHandler(req: BunRequest<"/uploads/:filename">): Promis
   const file = Bun.file(filePath);
   if (!(await file.exists())) return fail("Not found.", 404);
 
-  // Bun sets Content-Type from the extension. Two extra headers:
-  // - nosniff: the browser must trust that Content-Type and never guess, so an
-  //   upload can never be interpreted as HTML or JavaScript.
+  // Caching headers, sent with the 200 and with a 304:
   // - Cache-Control: the name is a UUID and the content never changes, so the
-  //   browser may keep the image for a year without asking again.
+  //   browser may keep the image for a year without asking again (immutable).
+  // - ETag: a validator for when the browser asks anyway (a hard reload, or the
+  //   cache entry was evicted). Size + modification time, like nginx does.
+  const caching = {
+    "Cache-Control": "public, max-age=31536000, immutable",
+    ETag: `"${file.size.toString(16)}-${file.lastModified.toString(16)}"`,
+  };
+
+  // If-None-Match names our ETag: the browser already has this exact file.
+  if (etagMatches(req, caching.ETag)) return notModified(caching);
+
+  // Bun sets Content-Type from the extension, and answers Range requests
+  // (206 Partial Content) for a Bun.file by itself. nosniff: the browser must
+  // trust that Content-Type and never guess, so an upload can never be
+  // interpreted as HTML or JavaScript.
   return new Response(file, {
-    headers: {
-      "X-Content-Type-Options": "nosniff",
-      "Cache-Control": "public, max-age=31536000, immutable",
-    },
+    headers: { ...caching, "X-Content-Type-Options": "nosniff" },
   });
+}
+
+// GET /ws – upgrade the request to a WebSocket (see realtime.ts).
+//
+// server.upgrade() answers 101 Switching Protocols itself. After a successful
+// upgrade the handler returns nothing: there is no HTTP response to send.
+function socketHandler(req: Request, server: Server<undefined>): Response | undefined {
+  if (server.upgrade(req)) return undefined;
+  return fail("Expected a WebSocket upgrade request.", 426);
 }
 
 export const routes = {
@@ -63,6 +82,9 @@ export const routes = {
   },
   "/uploads/:filename": {
     GET: serveUploadHandler,
+  },
+  "/ws": {
+    GET: socketHandler,
   },
 };
 
