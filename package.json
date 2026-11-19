@@ -6,7 +6,8 @@
     "week-*/*-api",
     "week-*/*-client",
     "week-*/habit-tracker",
-    "week-*/book-explorer"
+    "week-*/book-explorer",
+    "week-*/demos"
   ],
   "scripts": {
     "setup:env": "bun scripts/setup-env.ts",

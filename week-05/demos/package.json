@@ -1,0 +1,16 @@
+{
+  "name": "week-05-demos",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "chat:polling": "bun chat-polling/server.ts",
+    "chat:websocket": "bun chat-websocket/server.ts",
+    "etag": "bun etag/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "~6.0.3"
+  }
+}

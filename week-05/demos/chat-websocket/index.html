@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat · WebSocket</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+      #messages { list-style: none; margin: 0; padding: 0.5rem; height: 20rem; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; }
+      #messages li { padding: 0.15rem 0; }
+      form { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+      #text { flex: 1; }
+      .muted { color: #666; font-size: 0.9em; }
+    </style>
+  </head>
+  <body>
+    <h1>Chat <small class="muted">with a WebSocket (the server pushes)</small></h1>
+    <p class="muted" id="status">Connecting…</p>
+    <ul id="messages"></ul>
+    <form id="form">
+      <input id="name" placeholder="Name" maxlength="20" required />
+      <input id="text" placeholder="Message" maxlength="200" autocomplete="off" required />
+      <button>Send</button>
+    </form>
+
+    <script type="module">
+      const list = document.querySelector("#messages");
+      const status = document.querySelector("#status");
+      const form = document.querySelector("#form");
+      const nameInput = document.querySelector("#name");
+      const textInput = document.querySelector("#text");
+
+      function show(message) {
+        const li = document.createElement("li");
+        const time = new Date(message.sentAt).toLocaleTimeString();
+        // textContent, never innerHTML: the text comes from other users.
+        li.textContent = `${time}  ${message.name}: ${message.text}`;
+        list.append(li);
+        list.scrollTop = list.scrollHeight;
+      }
+
+      // ---- Receiving: one connection stays open, the server pushes -----------
+      const protocol = location.protocol === "https:" ? "wss" : "ws";
+      const socket = new WebSocket(`${protocol}://${location.host}/ws`);
+      let received = 0;
+
+      socket.addEventListener("open", () => {
+        status.textContent = "Connected. The browser never asks; the server sends.";
+      });
+      socket.addEventListener("message", (event) => {
+        show(JSON.parse(event.data));
+        received++;
+        status.textContent = `Connected. Messages pushed by the server: ${received}. Requests asking for them: 0.`;
+      });
+      socket.addEventListener("close", () => {
+        status.textContent = "Disconnected. Reload the page to connect again.";
+      });
+
+      // ---- Sending: over the same connection -----------------------------------
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (socket.readyState !== WebSocket.OPEN) return;
+        socket.send(JSON.stringify({ name: nameInput.value, text: textInput.value }));
+        textInput.value = "";
+        // The server sends it straight back to everybody, us included.
+      });
+    </script>
+  </body>
+</html>

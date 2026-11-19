@@ -68,7 +68,7 @@ From the repository root:
 
 | Command | What it does |
 | ------- | ------------ |
-| `bun run typecheck` | `tsc --noEmit` in all 20 projects |
+| `bun run typecheck` | `tsc --noEmit` in all 21 projects |
 | `bun run test` | `bun test` in every API: 132 tests (needs `services:up`, `setup:env`, `setup:db`) |
 | `bun run build` | production builds of all clients (and the week 12 API bundle) |
 | `bun run lint` | ESLint over everything, including the React hooks rules |
