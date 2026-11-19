@@ -24,7 +24,8 @@ After this week you can:
 
 ## What you build
 
-The week 5 API plus one endpoint:
+The week 5 API plus one endpoint. Week 5's ETag/`304` handling and the
+WebSocket are left out, so this week's code is only about the database:
 
 | Method | Path | Success | Errors |
 | ------ | ---- | ------- | ------ |
@@ -92,8 +93,8 @@ week-06/image-gallery-v2-api/
 └── tests/uploads.test.ts
 ```
 
-The client is week 5's plus a delete button (`Gallery.tsx`, `App.tsx`,
-`api.ts`).
+The client is week 5's without the WebSocket (no *Live* indicator), plus a
+delete button (`Gallery.tsx`, `App.tsx`, `api.ts`).
 
 ---
 

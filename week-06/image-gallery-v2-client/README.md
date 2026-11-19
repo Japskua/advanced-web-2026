@@ -1,6 +1,6 @@
 # Image Gallery v2 client (week 6)
 
-Week 5's client plus deleting images.
+Week 5's client (without the WebSocket) plus deleting images.
 
 **Lecture notes:** [week-06/README.md](../README.md) explains every concept in this project step by step.
 
