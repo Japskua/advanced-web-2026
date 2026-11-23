@@ -426,19 +426,28 @@ export function useGallerySocket(onMessage: (message: ServerMessage) => void): S
   const handleMessage = useEffectEvent(onMessage);
 
   useEffect(() => {
-    const socket = new WebSocket(WS_URL);
-    socket.addEventListener("open", () => setStatus("open"));
-    socket.addEventListener("close", () => setStatus("closed"));
-    socket.addEventListener("message", (event: MessageEvent) => {
-      let message: ServerMessage;
-      try {
-        message = JSON.parse(String(event.data)) as ServerMessage;
-      } catch {
-        return;                                   // not JSON: ignore it
-      }
-      handleMessage(message);
-    });
-    return () => socket.close();                  // leave the page: close the connection
+    let socket: WebSocket | undefined;
+
+    function connect() {
+      socket = new WebSocket(WS_URL);
+      socket.addEventListener("open", () => setStatus("open"));
+      socket.addEventListener("close", () => setStatus("closed"));
+      socket.addEventListener("message", (event: MessageEvent) => {
+        let message: ServerMessage;
+        try {
+          message = JSON.parse(String(event.data)) as ServerMessage;
+        } catch {
+          return;                                 // not JSON: ignore it
+        }
+        handleMessage(message);
+      });
+    }
+
+    const timer = setTimeout(connect, 0);         // connect on the next tick
+    return () => {
+      clearTimeout(timer);                        // not connected yet: just cancel
+      socket?.close();                            // leave the page: close the connection
+    };
   }, []);
 
   return status;
@@ -446,9 +455,15 @@ export function useGallerySocket(onMessage: (message: ServerMessage) => void): S
 ```
 
 - **One connection per mounted component.** The dependency array is empty, so
-  the socket opens once. Under `StrictMode` the effect runs twice on mount: the
-  first socket is closed by the cleanup right away (the console may say
-  *"closed before the connection is established"*), and the second one stays.
+  the socket opens once.
+- **Why connect on the next tick?** In development `StrictMode` mounts the
+  component, unmounts it and mounts it again at once, to check that the
+  cleanup really undoes the effect. If the effect created the socket right
+  away, the first socket would be closed while it is still connecting, and
+  Chromium browsers log *"WebSocket is closed before the connection is
+  established"*. It is harmless, but it looks like a bug. With `setTimeout(…, 0)`
+  the first cleanup only cancels the timer, so exactly one socket is ever
+  created. In production (no `StrictMode` double mount) nothing changes.
 - **`useEffectEvent`** (React 19.2+) wraps the callback so the effect always
   calls the newest version of it without listing it as a dependency. With
   `onMessage` in the dependency array, every render would close the socket and
