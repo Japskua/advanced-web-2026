@@ -18,7 +18,9 @@ export const withLogging: Middleware = (next) => async (req, server) => {
   try {
     const res = await next(req, server);
     const ms = (performance.now() - start).toFixed(1);
-    console.log(`[${new Date().toISOString()}] ← ${res.status} ${req.method} ${pathname} (${ms} ms)`);
+    // No Response: the handler upgraded the request to a WebSocket (101).
+    const status = res ? res.status : "101 (WebSocket)";
+    console.log(`[${new Date().toISOString()}] ← ${status} ${req.method} ${pathname} (${ms} ms)`);
     return res;
   } catch (error) {
     // One line here; the error itself continues to Bun's error handler, which

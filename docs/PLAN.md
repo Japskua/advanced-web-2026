@@ -140,6 +140,9 @@ added. "Bun feature" is what the week can show off about the toolchain.
   `.env` instead of source code.
 - Added: `bun run db:setup` applies `sql/schema.sql` with no `psql` needed;
   `docker compose` provides PostgreSQL.
+- Continues from week 5's lecture app: image `ETag`/`304`, the request logger
+  and the live viewer count over `/ws` stay (week 5's exercise solutions, such
+  as the list ETag and upload broadcasts, are not added).
 
 ### Week 7 – Authentication (`week-07/secret-notes-*`)
 - Same: register/login, JWT in `localStorage`, protected notes, React Router.

@@ -16,10 +16,14 @@ import type { Server } from "bun";
 // A handler for any kind of request. `Req` is a type parameter so the same
 // middleware works for plain Requests (the fetch fallback) and for Bun's typed
 // route requests (BunRequest<"/api/uploads/:id">) without losing the types.
+//
+// A handler normally returns a Response. After a WebSocket upgrade it returns
+// nothing (undefined): Bun has already answered 101 Switching Protocols, so a
+// middleware must check before it touches the response.
 export type Handler<Req extends Request = Request> = (
   req: Req,
   server: Server<undefined>,
-) => Response | Promise<Response>;
+) => Response | undefined | Promise<Response | undefined>;
 
 // A middleware is generic too: whatever request type goes in comes back out.
 export type Middleware = <Req extends Request>(next: Handler<Req>) => Handler<Req>;

@@ -12,6 +12,7 @@ const tmp = await mkdtemp(path.join(os.tmpdir(), "image-gallery-v2-test-"));
 process.env.UPLOADS_DIR = tmp;
 
 const { routes, fallback, errorHandler } = await import("../src/router");
+const { websocket } = await import("../src/realtime");
 const { sql } = await import("../src/db/client");
 
 const PNG_BYTES = Uint8Array.fromBase64(
@@ -24,7 +25,7 @@ const createdIds: string[] = [];
 
 beforeAll(async () => {
   await sql.file(path.join(import.meta.dir, "..", "sql", "schema.sql"));
-  server = Bun.serve({ port: 0, routes, fetch: fallback, error: errorHandler });
+  server = Bun.serve({ port: 0, routes, fetch: fallback, websocket, error: errorHandler });
   baseUrl = server.url.origin;
 });
 
@@ -114,5 +115,46 @@ describe("parameterised queries", () => {
 
     const rows = await sql`select original_name from uploads where id = ${record.id}`;
     expect(rows).toEqual([{ original_name: evilName }]);
+  });
+});
+
+// The two week 5 features this API keeps: cached images and the live count.
+describe("from week 5", () => {
+  test("an image has an ETag, and If-None-Match with it is 304 without a body", async () => {
+    const record = await uploadPng("cached.png");
+    const url = `${baseUrl}${record.url}`;
+
+    const first = await fetch(url);
+    expect(first.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+    const etag = first.headers.get("etag")!;
+    expect(etag).toMatch(/^"[0-9a-f]+-[0-9a-f]+"$/);
+
+    const again = await fetch(url, { headers: { "If-None-Match": etag } });
+    expect(again.status).toBe(304);
+    expect(await again.text()).toBe("");
+  });
+
+  test("every tab hears how many tabs are connected", async () => {
+    const connect = async () => {
+      const socket = new WebSocket(`${baseUrl.replace(/^http/, "ws")}/ws`);
+      const messages: unknown[] = [];
+      socket.addEventListener("message", (event) => messages.push(JSON.parse(String(event.data))));
+      await new Promise((resolve, reject) => {
+        socket.addEventListener("open", resolve);
+        socket.addEventListener("error", reject);
+      });
+      return { socket, messages };
+    };
+
+    const a = await connect();
+    const b = await connect();
+    await Bun.sleep(50);
+    expect(a.messages.at(-1)).toEqual({ type: "viewers", count: 2 });
+    expect(b.messages.at(-1)).toEqual({ type: "viewers", count: 2 });
+
+    b.socket.close();
+    await Bun.sleep(50);
+    expect(a.messages.at(-1)).toEqual({ type: "viewers", count: 1 });
+    a.socket.close();
   });
 });
