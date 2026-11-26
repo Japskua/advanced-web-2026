@@ -13,6 +13,22 @@ body {
 
 .header {
   margin-bottom: 16px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Connection state of the WebSocket (useGallerySocket). */
+.live {
+  font-size: 14px;
+  color: #666;
+}
+.live.open {
+  color: #1a7f37;
+}
+.live.closed {
+  color: #b42318;
 }
 
 h1 {

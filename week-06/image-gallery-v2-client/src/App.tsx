@@ -4,6 +4,7 @@ import { deleteImage, fetchUploads, uploadImage } from "./api";
 import Gallery from "./components/Gallery";
 import StatusBanner, { type StatusVariant } from "./components/StatusBanner";
 import UploadForm from "./components/UploadForm";
+import { useGallerySocket } from "./hooks/useGallerySocket";
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -18,6 +19,16 @@ export default function App() {
 
   const [statusMessage, setStatusMessage] = useState("");
   const [statusVariant, setStatusVariant] = useState<StatusVariant>("info");
+
+  // The live viewer count from week 5 (see hooks/useGallerySocket.ts).
+  const [viewers, setViewers] = useState<number | null>(null);
+  const socketStatus = useGallerySocket((message) => {
+    switch (message.type) {
+      case "viewers":
+        setViewers(message.count);
+        break;
+    }
+  });
 
   function showStatus(variant: StatusVariant, message: string) {
     setStatusVariant(variant);
@@ -76,6 +87,9 @@ export default function App() {
     <div className="container">
       <header className="header">
         <h1>Image Gallery v2</h1>
+        <span className={`live ${socketStatus}`}>
+          {socketStatus === "open" ? `● Live · ${viewers ?? 1} viewing` : socketStatus === "connecting" ? "Connecting…" : "Offline"}
+        </span>
       </header>
 
       <section className="card">

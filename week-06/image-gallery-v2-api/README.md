@@ -1,6 +1,6 @@
 # Image Gallery v2 API (week 6)
 
-Week 5's API (without its ETag/304 handling and the WebSocket) with the metadata moved to PostgreSQL through Bun's built-in SQL client, a repository layer, and a delete endpoint.
+Week 5's API (cached images, the request logger and the live viewer count over `/ws` included) with the metadata moved to PostgreSQL through Bun's built-in SQL client, a repository layer, and a delete endpoint.
 
 **Lecture notes:** [week-06/README.md](../README.md) explains every concept in this project step by step.
 
@@ -26,7 +26,7 @@ This is one half of a full-stack app; start the other half too: [`image-gallery-
 | `bun run start` | Start the API without watching |
 | `bun run db:setup` | Create the database tables from `sql/` |
 | `bun run typecheck` | Type-check with `tsc` (Bun runs TypeScript but never checks it) |
-| `bun run test` | Run the tests (`bun test`) – 7 tests |
+| `bun run test` | Run the tests (`bun test`) – 9 tests |
 
 ## Configuration
 

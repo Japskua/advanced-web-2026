@@ -1,4 +1,4 @@
-import type { BunRequest } from "bun";
+import type { BunRequest, Server } from "bun";
 import {
   deleteUploadedImage,
   listUploads,
@@ -6,11 +6,13 @@ import {
   saveUploadedImage,
   UploadError,
 } from "./services/upload-service";
+import { etagMatches, notModified } from "./util/http-cache";
 import { corsHeaders, fail, ok } from "./util/response";
 import { isUuid } from "./util/validation";
 
 // The router only translates between HTTP and the service: read the request,
-// call the service, choose the status code.
+// call the service, choose the status code. Compared with week 5, the handlers
+// are the same apart from the new DELETE route and errorHandler at the end.
 
 // GET /api/uploads
 async function listUploadsHandler(): Promise<Response> {
@@ -56,12 +58,26 @@ async function serveUploadHandler(req: BunRequest<"/uploads/:filename">): Promis
   const file = Bun.file(filePath);
   if (!(await file.exists())) return fail("Not found.", 404);
 
+  // Caching from week 5: the name is a UUID and the content never changes, so
+  // the browser may keep the image for a year (immutable). The ETag (size +
+  // modification time) answers a browser that asks anyway with 304.
+  const caching = {
+    "Cache-Control": "public, max-age=31536000, immutable",
+    ETag: `"${file.size.toString(16)}-${file.lastModified.toString(16)}"`,
+  };
+  if (etagMatches(req, caching.ETag)) return notModified(caching);
+
+  // Bun answers Range requests (206 Partial Content) for a Bun.file by itself.
   return new Response(file, {
-    headers: {
-      "X-Content-Type-Options": "nosniff",
-      "Cache-Control": "public, max-age=31536000, immutable",
-    },
+    headers: { ...caching, "X-Content-Type-Options": "nosniff" },
   });
+}
+
+// GET /ws – upgrade to a WebSocket (week 5, see realtime.ts). After a
+// successful upgrade there is no HTTP response to return.
+function socketHandler(req: Request, server: Server<undefined>): Response | undefined {
+  if (server.upgrade(req)) return undefined;
+  return fail("Expected a WebSocket upgrade request.", 426);
 }
 
 export const routes = {
@@ -74,6 +90,9 @@ export const routes = {
   },
   "/uploads/:filename": {
     GET: serveUploadHandler,
+  },
+  "/ws": {
+    GET: socketHandler,
   },
 };
 

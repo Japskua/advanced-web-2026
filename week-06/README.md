@@ -3,18 +3,21 @@
 Week 5 stored image metadata in a JSON file and ended with a list of reasons
 why that does not scale. This week the **Image Gallery v2** moves the metadata
 into **PostgreSQL**. The image files stay on disk (week 12 moves them to cloud
-storage). Users can now also delete images.
+storage). Users can now also delete images. Everything else in week 5's
+lecture app stays as it was: the request logger, the cached images (`ETag`,
+`304`, `Range`) and the live viewer count over the WebSocket.
 
-The new back-end topics: connecting to a database with Bun's built-in SQL
-client, **parameterised queries**, **mapping database rows** to application
-objects, the **repository layer**, and configuration through **environment
-variables**.
+The new back-end topics: running PostgreSQL in a **Docker container**,
+connecting to it with Bun's built-in SQL client, **parameterised queries**,
+**mapping database rows** to application objects, the **repository layer**,
+and configuration through **environment variables**.
 
 ## Learning objectives
 
 After this week you can:
 
-- run PostgreSQL locally with Docker and create a schema from an SQL file
+- explain what a Docker image, container and volume are, and why the course runs PostgreSQL in a container
+- start PostgreSQL with Docker Compose and create a schema from an SQL file
 - connect to PostgreSQL with Bun's built-in `SQL` client and a connection pool
 - write parameterised queries with tagged templates and explain why they prevent SQL injection
 - map database rows (snake_case, `Date`) to API objects (camelCase, ISO strings)
@@ -24,15 +27,21 @@ After this week you can:
 
 ## What you build
 
-The week 5 API plus one endpoint. Week 5's ETag/`304` handling and the
-WebSocket are left out, so this week's code is only about the database:
+Week 5's API plus one endpoint, `DELETE`. The other routes behave exactly as
+in week 5; what changed is where the metadata is kept:
 
 | Method | Path | Success | Errors |
 | ------ | ---- | ------- | ------ |
 | `GET` | `/api/uploads` | `200` `UploadRecord[]`, newest first | – |
 | `POST` | `/api/uploads` | `201` the `UploadRecord` | `400`, `413`, `415` |
 | `DELETE` | `/api/uploads/:id` | `200` the deleted `UploadRecord` | `400` malformed id, `404` unknown |
-| `GET` | `/uploads/:filename` | `200` the image | `400`, `404` |
+| `GET` | `/uploads/:filename` | `200` the image (`304` for a matching `If-None-Match`, `206` for a `Range`) | `400`, `404` |
+| `GET` | `/ws` | `101`: a WebSocket that receives the viewer count (`ServerMessage`) | `426` not an upgrade |
+
+The viewer count still lives in a variable in the API process, not in the
+database: it describes who is connected right now, and it is lost on a restart
+on purpose. The uploads are the data that must survive, so they go to
+PostgreSQL.
 
 ## Running it
 
@@ -51,7 +60,7 @@ cd week-06/image-gallery-v2-api
 cp .env.example .env          # once
 bun run db:setup              # once: creates the uploads table
 bun run dev                   # http://localhost:8000
-bun test                      # 7 integration tests against the database
+bun test                      # 9 integration tests against the database
 
 # terminal 2
 cd week-06/image-gallery-v2-client
@@ -77,9 +86,10 @@ week-06/image-gallery-v2-api/
 ├── scripts/
 │   └── db-setup.ts                bun run db:setup → applies schema.sql
 ├── src/
-│   ├── main.ts                    Bun.serve with middleware and an error handler
+│   ├── main.ts                    Bun.serve with middleware, the WebSocket and an error handler
 │   ├── config.ts                  reads and checks environment variables
 │   ├── router.ts                  HTTP only: parse, call the service, choose the status
+│   ├── realtime.ts                websocket handlers: the live viewer count (from week 5)
 │   ├── db/
 │   │   └── client.ts              the SQL connection pool
 │   ├── repositories/
@@ -89,22 +99,78 @@ week-06/image-gallery-v2-api/
 │   ├── middleware/                withLogging, applyMiddleware (from week 5)
 │   └── util/
 │       ├── response.ts            ok(), fail(), corsHeaders() (+ DELETE)
+│       ├── http-cache.ts          etagMatches(), notModified() (from week 5)
 │       └── validation.ts          isUuid()
 └── tests/uploads.test.ts
 ```
 
-The client is week 5's without the WebSocket (no *Live* indicator), plus a
-delete button (`Gallery.tsx`, `App.tsx`, `api.ts`).
+`shared/` holds `types.ts`, `upload-rules.ts` and `socket-messages.ts`, all
+unchanged from week 5. The client is week 5's, *Live* indicator and
+`hooks/useGallerySocket.ts` included, plus a delete button (`Gallery.tsx`,
+`App.tsx`, `api.ts`).
 
 ---
 
 ## Concepts
 
+### Docker and containers
+
+PostgreSQL is a server program. Installed directly on every laptop, it would
+come in a different version with different settings on each machine, keep
+running in the background after the course, and need its own installer on
+Windows. The course runs it in a **container** instead.
+
+| Term | What it is |
+| ---- | ---------- |
+| **Image** | A packaged program with everything it needs to run. Ours is `postgres:18-alpine`: PostgreSQL 18 on a small Linux. Downloaded once from Docker Hub. |
+| **Container** | A running instance of an image, isolated from the rest of the computer. It can be stopped, removed and recreated in seconds. |
+| **Volume** | Storage that Docker keeps outside the container. The database files live there, so removing the container does not remove the data. |
+| **Port mapping** | `"5432:5432"` forwards `localhost:5432` on your computer to port 5432 inside the container. |
+
+A container is not a virtual machine. It shares the host's Linux kernel and
+starts in about a second. On macOS and Windows, Docker Desktop runs one small
+Linux virtual machine in the background, and every container runs inside it.
+
+Why the course uses it:
+
+- Everyone gets the same PostgreSQL 18 with the same user, password and
+  databases, on any operating system.
+- Nothing is installed permanently. `docker compose down -v` removes the
+  database completely, and the next `up` starts a fresh one.
+- Week 12 deploys the finished app to a cloud server with the same tool,
+  Docker Compose.
+
+**Installing.** Docker Desktop on macOS and Windows (on Windows it uses
+WSL 2), Docker Engine with the Compose plugin on Linux:
+<https://docs.docker.com/get-started/get-docker/>. Check the installation with
+`docker --version` and `docker compose version`. [docs/setup.md](../docs/setup.md)
+lists the course's other tools.
+
 ### PostgreSQL in Docker
 
-The repository's `docker-compose.yml` runs PostgreSQL 18 in a container, with
-the data in a Docker volume so it survives restarts. `docker/postgres-init.sql`
-runs the first time the container starts and creates a database for each week.
+`docker compose` reads `docker-compose.yml` in the repository root. The part
+for PostgreSQL:
+
+```yaml
+services:
+  postgres:
+    image: postgres:18-alpine          # which image to run
+    container_name: awa-postgres       # the name docker exec uses
+    environment:
+      POSTGRES_USER: postgres          # the image creates this user
+      POSTGRES_PASSWORD: postgres      # with this password (local use only)
+    ports:
+      - "5432:5432"                    # localhost:5432 → port 5432 in the container
+    volumes:
+      - postgres-data:/var/lib/postgresql   # the data survives restarts
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-create-databases.sql:ro
+```
+
+`docker compose up -d` downloads the image the first time, creates the volume
+and starts the container in the background (`-d` for *detached*). On the very
+first start, with an empty volume, the image runs `docker/postgres-init.sql`,
+which creates one database per week. This week uses `image_gallery`. The same
+file also starts SeaweedFS, the object storage for week 12.
 
 | Command (repository root) | Effect |
 | ------------------------- | ------ |
@@ -194,47 +260,140 @@ const rows = await sql<UploadRow[]>`
 `;
 ```
 
-This looks like a template string, but `sql` is a **tag function**. JavaScript
-calls it with the fixed text parts and the `${}` values *separately*:
+This looks like a template string, but no string is built here. `sql` is a
+**tag function**, and a tagged template is a function call. Three things
+happen:
+
+1. **JavaScript calls the tag.** It cuts the template at every `${}` and calls
+   `sql(strings, ...values)`: the fixed text in one array, the values in
+   another. Try it with a tag of your own:
+
+   ```ts
+   function show(strings: TemplateStringsArray, ...values: unknown[]) {
+     console.log({ strings: [...strings], values });
+   }
+   show`delete from uploads where id = ${id} returning id, filename`;
+   // { strings: [ "delete from uploads where id = ", " returning id, filename" ],
+   //   values:  [ "3f1c2b9e-8d4a-4c1e-9b7a-2f6d5e4c3b2a" ] }
+   ```
+
+2. **Bun sends the two parts separately.** It joins the text parts with
+   numbered placeholders (`$1`, `$2`, …) and sends that text to PostgreSQL.
+   The values travel next to it as a list of *parameters*. With statement
+   logging switched on, PostgreSQL's own log shows exactly this:
+
+   ```
+   LOG:     execute P1: delete from uploads where id = $1  returning id, filename, original_name, uploaded_at
+   DETAIL:  Parameters: $1 = '3f1c2b9e-8d4a-4c1e-9b7a-2f6d5e4c3b2a'
+   ```
+
+3. **PostgreSQL parses the text first, then fills in the values.** The shape
+   of the statement is fixed before any value is looked at. A parameter is
+   only ever data (a uuid to compare, a text to store); it can never become a
+   keyword, a quote or a second statement.
+
+That is why the test that uploads a file called `x'); drop table uploads; --.png`
+passes. The name arrives as a parameter and is stored as an ordinary name:
 
 ```
-strings: ["\n  delete from uploads\n  where id = ", "\n  returning …"]
-values:  ["3f1c2b9e-…"]
+LOG:     execute P0: select id from uploads where original_name = $1
+DETAIL:  Parameters: $1 = 'x''); drop table uploads; --.png'
 ```
 
-Bun sends the text to PostgreSQL with placeholders (`where id = $1`) and the
-values as separate parameters. The database parses the SQL first and only then
-plugs in the values, so a value can never change the structure of the query.
-A file named `x'); drop table uploads; --.png` is stored as exactly that name;
-a test proves it.
+(The log doubles the quote when it prints a value; the stored name has one.)
 
-Week 11 shows the opposite: SQL built by gluing strings together, and the
-injection attack it allows.
+Compare SQL built by gluing strings together:
+
+```ts
+sql.unsafe("insert into uploads (original_name) values ('" + name + "')");
+// PostgreSQL receives:
+//   insert into uploads (original_name) values ('x'); drop table uploads; --.png')
+```
+
+Now the value is part of the SQL text. Its quote ends the string, `);` ends
+the insert, `drop table uploads;` is a second statement, and `--` turns the
+rest into a comment. The value has changed what the query does: that is **SQL
+injection**. Week 11 shows the attack in full.
 
 The type argument `sql<UploadRow[]>` tells TypeScript what the rows look like.
 TypeScript cannot check this against the real table, so the row type must be
 kept in sync with the `select` list by hand.
 
-`returning` makes `insert`, `update` and `delete` give back the affected rows.
-That saves a second query: the insert returns the `uploaded_at` the database
-generated, and the delete returns the deleted row (the service needs its file
-name).
+### `returning`: the changed row comes back
+
+`insert`, `update` and `delete` normally report only how many rows they
+changed (`INSERT 0 1`). With `returning` they also give back the rows
+themselves, as if a `select` ran in the same statement. In `psql`:
+
+```
+image_gallery=# insert into uploads (id, filename, original_name, mime_type, size)
+                values ('3f1c2b9e-8d4a-4c1e-9b7a-2f6d5e4c3b2a', '3f1c2b9e-8d4a-4c1e-9b7a-2f6d5e4c3b2a.png',
+                        'cat.png', 'image/png', 5120)
+                returning id, original_name, size, uploaded_at;
+                  id                  | original_name | size |          uploaded_at
+--------------------------------------+---------------+------+-------------------------------
+ 3f1c2b9e-8d4a-4c1e-9b7a-2f6d5e4c3b2a | cat.png       | 5120 | 2026-11-26 09:52:21.764323+00
+(1 row)
+
+INSERT 0 1
+```
+
+The insert never sent `uploaded_at`. The column's `default now()` filled it in,
+and `returning` hands it back. In `insertUpload` the same statement gives Bun
+an array with one row object, and `toUploadRecord` turns that row into the
+`UploadRecord` the API answers with. Without `returning`, the API would need a
+second query to learn the time. The delete works the same way:
+`delete … returning …` gives back the row it removed, and the service needs
+its `filename` to remove the file.
 
 ### Mapping rows to API objects
 
-The database and the API speak different dialects:
+The repository receives rows from PostgreSQL, but the rest of the app works
+with `UploadRecord`, the shared API type from `shared/types.ts`. Both describe
+the same image in different shapes. Here is one image as Bun returns the row
+(`console.log(rows[0])`) and as the API sends it:
 
-| Database row (`UploadRow`) | API object (`UploadRecord`) |
-| -------------------------- | --------------------------- |
-| `original_name` | `originalName` |
-| `mime_type` | `mimeType` |
-| `uploaded_at: Date` | `uploadedAt: string` (ISO 8601) |
-| – | `url` (derived from `filename`) |
+```
+Row from PostgreSQL (UploadRow)               JSON from the API (UploadRecord)
+{                                             {
+  id: "3f1c2b9e-…",                             "id": "3f1c2b9e-…",
+  filename: "3f1c2b9e-….png",                   "filename": "3f1c2b9e-….png",
+  original_name: "cat.png",                     "originalName": "cat.png",
+  mime_type: "image/png",                       "mimeType": "image/png",
+  size: 5120,                                   "size": 5120,
+  uploaded_at: 2026-11-26T09:52:21.764Z,        "uploadedAt": "2026-11-26T09:52:21.764Z",
+}                                               "url": "/uploads/3f1c2b9e-….png"
+                                              }
+```
 
-`toUploadRecord(row)` converts one to the other, and it is the only place that
-knows both. The row type describes the table; it is an **entity** and never
-leaves the repository. The API type is part of the shared contract. Week 8
-gives these two roles their usual names: *entity* and *DTO*.
+| | Row | API object | Why they differ |
+| - | --- | ---------- | --------------- |
+| Names | `original_name`, `mime_type`, `uploaded_at` | `originalName`, `mimeType`, `uploadedAt` | SQL uses snake_case: PostgreSQL folds unquoted names to lower case, so a column called `originalName` would become `originalname`. JavaScript uses camelCase. |
+| Time | a JavaScript `Date` | an ISO 8601 string | JSON has no date type. The string format is part of the contract the client relies on. |
+| `url` | not stored | `/uploads/<filename>` | It can be derived from `filename`. Storing it too would be duplicate data that could go out of sync. |
+
+`toUploadRecord(row)` does the conversion, and it is the only code that knows
+both shapes:
+
+```ts
+function toUploadRecord(row: UploadRow): UploadRecord {
+  return {
+    id: row.id,
+    filename: row.filename,
+    originalName: row.original_name,
+    mimeType: row.mime_type,
+    size: row.size,
+    uploadedAt: row.uploaded_at.toISOString(),
+    url: `/uploads/${row.filename}`,
+  };
+}
+```
+
+Every repository function returns `UploadRecord`s, never rows. If a column is
+renamed, only the repository changes and the client never notices. The row
+type describes the table; it is an **entity** and never leaves the repository.
+The API type is part of the shared contract. Week 8 gives these two roles
+their usual names: *entity* and *DTO*.
 
 ### The layers
 
@@ -297,21 +456,25 @@ client.
 
 ## Lecture walkthrough
 
-1. Start PostgreSQL. Write `sql/schema.sql` and apply it with `psql` or with
-   `bun run db:setup`. Insert a row by hand and query it.
-2. `.env.example` → `.env`, then `config.ts`. Show the error when `.env` is
+1. Docker: image, container, volume, and why the course uses them. Then
+   `docker compose up -d`, `docker compose ps`, and `docker exec … psql` into
+   the container.
+2. Write `sql/schema.sql` and apply it with `psql` or with
+   `bun run db:setup`. Insert a row by hand with `returning`, and query it.
+3. `.env.example` → `.env`, then `config.ts`. Show the error when `.env` is
    missing.
-3. `db/client.ts`, then the repository: `UploadRow`, `toUploadRecord`,
+4. `db/client.ts`, then the repository: `UploadRow`, `toUploadRecord`,
    `insertUpload`, `listUploads`, `deleteUploadById`. Explain tagged
-   templates and `returning`.
-4. Update the service: replace the JSON file with repository calls, add
+   templates with the `show` tag above, and `returning`.
+5. Update the service: replace the JSON file with repository calls, add
    `deleteUploadedImage` and discuss the order of operations.
-5. Router: the `DELETE` route with `isUuid`, CORS for `DELETE`, the `error`
-   handler.
-6. Client: `deleteImage()` in `api.ts`, the button in `Gallery`, `deletingId`
+6. Router: the `DELETE` route with `isUuid`, CORS for `DELETE`, the `error`
+   handler. The image route and `/ws` are unchanged from week 5.
+7. Client: `deleteImage()` in `api.ts`, the button in `Gallery`, `deletingId`
    and `handleDelete` in `App`.
-7. Verify: upload, restart the API, the gallery is still there; delete, check
-   the row and the file are both gone.
+8. Verify: upload, restart the API, the gallery is still there (the viewer
+   count starts again from zero: it was only in memory); delete, check the
+   row and the file are both gone.
 
 ## Compared with last year's Deno version
 
@@ -328,13 +491,13 @@ client.
 ## Exercises
 
 1. Add pagination: `GET /api/uploads?limit=20&offset=40`. Validate both
-   numbers, use them in the query (`limit ${limit} offset ${offset}`), and
-   return the total count as well (`select count(*) …`).
+   numbers, do the paging in SQL rather than in JavaScript, and send the total
+   number of uploads as well.
 2. Add a `title` column that the user can edit with `PATCH /api/uploads/:id`.
-   Write the `alter table` statement and think about existing rows.
-3. Wrap the delete in a transaction:
-   `await sql.begin(async (tx) => { … })`. Delete the row inside it, delete the
-   file, and let an exception roll the row back. Which failure case does this
+   Add it with an `alter table` statement that also works on a database that
+   already has images in it, and think about the existing rows.
+3. Make the delete safe with a transaction (`sql.begin` in Bun's SQL client):
+   if removing the file fails, the row must stay. Which failure case does this
    fix, and which one remains?
 4. Write a test for the 500 handler: make the repository throw (hint:
    `spyOn` on the repository module) and check the response body has no

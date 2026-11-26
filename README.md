@@ -20,7 +20,7 @@ explains what changed and why.
 | [3](week-03/README.md) | React | Habit Tracker | Components, props, state, immutable updates, `useMemo`; Bun's dev server and bundler |
 | [4](week-04/README.md) | Full-stack data flow | Joke Dashboard | `useEffect` + cleanup, loading/error states, service layer, CORS, shared types, `502`/`504` |
 | [5](week-05/README.md) | Files, uploads, caching and WebSockets | Image Gallery | `multipart/form-data`, `Bun.file`/`Bun.write`, magic-byte checks, middleware, ETag/304, WebSockets with pub/sub |
-| [6](week-06/README.md) | SQL database | Image Gallery v2 | Bun's built-in PostgreSQL client, parameterised queries, repositories, `.env` |
+| [6](week-06/README.md) | SQL database | Image Gallery v2 | PostgreSQL in Docker, Bun's built-in PostgreSQL client, parameterised queries, repositories, `.env` |
 | [7](week-07/README.md) | Authentication | Secret Notes | `Bun.password` (Argon2id), JWT, React Router, protected routes |
 | [8](week-08/README.md) | Elysia & layered architecture | Community Notice Board | Elysia (plugins, schema validation), routes → services → repositories, DTO vs entity, RBAC with a macro, `AppError` + `onError`, shadcn/ui + Tailwind CSS |
 | [9](week-09/README.md) | Advanced React | Book Explorer | Custom hooks, debouncing, race conditions, pagination, `memo`/`useCallback` |
